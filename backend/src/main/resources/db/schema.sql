@@ -1,0 +1,330 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS fball DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE fball;
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  email VARCHAR(100),
+  phone VARCHAR(20),
+  avatar VARCHAR(255),
+  nickname VARCHAR(50),
+  gender TINYINT DEFAULT 0,
+  birthday DATE,
+  status TINYINT DEFAULT 1,
+  last_login_time DATETIME,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 角色表
+CREATE TABLE IF NOT EXISTS sys_role (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  role_name VARCHAR(50) UNIQUE NOT NULL,
+  role_code VARCHAR(50) UNIQUE NOT NULL,
+  description VARCHAR(200),
+  status TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 权限表
+CREATE TABLE IF NOT EXISTS sys_permission (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  permission_name VARCHAR(100) NOT NULL,
+  permission_code VARCHAR(100) UNIQUE NOT NULL,
+  parent_id BIGINT DEFAULT 0,
+  type TINYINT DEFAULT 1,
+  path VARCHAR(200),
+  icon VARCHAR(100),
+  sort_order INT DEFAULT 0,
+  status TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 角色权限关联表
+CREATE TABLE IF NOT EXISTS sys_role_permission (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  role_id BIGINT NOT NULL,
+  permission_id BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (role_id) REFERENCES sys_role(id) ON DELETE CASCADE,
+  FOREIGN KEY (permission_id) REFERENCES sys_permission(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_role_permission (role_id, permission_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户角色关联表
+CREATE TABLE IF NOT EXISTS sys_user_role (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  role_id BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (role_id) REFERENCES sys_role(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_user_role (user_id, role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 菜单表
+CREATE TABLE IF NOT EXISTS sys_menu (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  menu_name VARCHAR(50) NOT NULL,
+  parent_id BIGINT DEFAULT 0,
+  path VARCHAR(200),
+  component VARCHAR(200),
+  icon VARCHAR(100),
+  sort_order INT DEFAULT 0,
+  visible TINYINT DEFAULT 1,
+  status TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 角色菜单关联表
+CREATE TABLE IF NOT EXISTS sys_role_menu (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  role_id BIGINT NOT NULL,
+  menu_id BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (role_id) REFERENCES sys_role(id) ON DELETE CASCADE,
+  FOREIGN KEY (menu_id) REFERENCES sys_menu(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_role_menu (role_id, menu_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 球队表
+CREATE TABLE IF NOT EXISTS teams (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  logo VARCHAR(255),
+  description TEXT,
+  founded_date DATE,
+  stadium VARCHAR(100),
+  city VARCHAR(50),
+  country VARCHAR(50),
+  created_by BIGINT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 球队成员关系表
+CREATE TABLE IF NOT EXISTS team_members (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  team_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  role VARCHAR(20) DEFAULT 'member',
+  member_type VARCHAR(20) DEFAULT 'player',
+  status TINYINT DEFAULT 0,
+  invite_by BIGINT,
+  join_time DATETIME,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (invite_by) REFERENCES users(id),
+  UNIQUE KEY uk_team_user (team_id, user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 球队邀请记录表
+CREATE TABLE IF NOT EXISTS team_invitations (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  team_id BIGINT NOT NULL,
+  inviter_id BIGINT NOT NULL,
+  invitee_id BIGINT,
+  invite_code VARCHAR(50) UNIQUE,
+  status TINYINT DEFAULT 0,
+  expire_time DATETIME,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+  FOREIGN KEY (inviter_id) REFERENCES users(id),
+  FOREIGN KEY (invitee_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 球队申请记录表
+CREATE TABLE IF NOT EXISTS team_applications (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  team_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  reason TEXT,
+  status TINYINT DEFAULT 0,
+  reviewer_id BIGINT,
+  review_time DATETIME,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (reviewer_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 球员表
+CREATE TABLE IF NOT EXISTS players (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  team_id BIGINT,
+  name VARCHAR(100) NOT NULL,
+  position VARCHAR(50),
+  number INT,
+  nationality VARCHAR(50),
+  birth_date DATE,
+  height DECIMAL(5,2),
+  weight DECIMAL(5,2),
+  avatar VARCHAR(255),
+  FOREIGN KEY (team_id) REFERENCES teams(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 教练表
+CREATE TABLE IF NOT EXISTS coaches (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  team_id BIGINT,
+  name VARCHAR(100) NOT NULL,
+  role_title VARCHAR(50),
+  nationality VARCHAR(50),
+  birth_date DATE,
+  experience_years INT,
+  avatar VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 赛事表
+CREATE TABLE IF NOT EXISTS matches (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  home_team_id BIGINT,
+  away_team_id BIGINT,
+  league_id BIGINT,
+  match_date DATETIME,
+  venue VARCHAR(100),
+  status TINYINT DEFAULT 0,
+  home_score INT DEFAULT 0,
+  away_score INT DEFAULT 0,
+  created_by BIGINT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (home_team_id) REFERENCES teams(id),
+  FOREIGN KEY (away_team_id) REFERENCES teams(id),
+  FOREIGN KEY (created_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 帖子表
+CREATE TABLE IF NOT EXISTS posts (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT,
+  title VARCHAR(200) NOT NULL,
+  content TEXT,
+  category VARCHAR(50),
+  view_count INT DEFAULT 0,
+  like_count INT DEFAULT 0,
+  comment_count INT DEFAULT 0,
+  status TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 商品表
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  price DECIMAL(10,2) NOT NULL,
+  original_price DECIMAL(10,2),
+  category_id BIGINT,
+  stock INT DEFAULT 0,
+  sales_count INT DEFAULT 0,
+  images TEXT,
+  status TINYINT DEFAULT 1,
+  merchant_id BIGINT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (merchant_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 订单表
+CREATE TABLE IF NOT EXISTS orders (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_no VARCHAR(50) UNIQUE NOT NULL,
+  user_id BIGINT,
+  product_id BIGINT,
+  quantity INT DEFAULT 1,
+  total_amount DECIMAL(10,2) NOT NULL,
+  status TINYINT DEFAULT 0,
+  payment_time DATETIME,
+  delivery_time DATETIME,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (product_id) REFERENCES products(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 评论表
+CREATE TABLE IF NOT EXISTS comments (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  post_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  parent_id BIGINT DEFAULT 0,
+  content TEXT NOT NULL,
+  like_count INT DEFAULT 0,
+  status TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 点赞记录表
+CREATE TABLE IF NOT EXISTS likes (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  target_id BIGINT NOT NULL,
+  target_type TINYINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_user_target (user_id, target_id, target_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 收藏记录表
+CREATE TABLE IF NOT EXISTS favorites (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  target_id BIGINT NOT NULL,
+  target_type TINYINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_user_favorite (user_id, target_id, target_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 购物车表
+CREATE TABLE IF NOT EXISTS cart (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  UNIQUE KEY uk_user_product (user_id, product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 聊天消息表
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  sender_id BIGINT NOT NULL,
+  receiver_id BIGINT NOT NULL,
+  content TEXT NOT NULL,
+  message_type TINYINT DEFAULT 1,
+  status TINYINT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_sender_receiver (sender_id, receiver_id),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 审核日志表
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  target_id BIGINT NOT NULL,
+  target_type TINYINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  action TINYINT NOT NULL,
+  reason VARCHAR(500),
+  operator_id BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (operator_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_target (target_id, target_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.football.community.service.PostServiceTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.17 s - in com.football.community.service.PostServiceTest

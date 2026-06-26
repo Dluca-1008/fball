@@ -1,0 +1,351 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------------< com.football:community >-----------------------
+[INFO] Building football-community 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:2.7.18:run (default-cli) > test-compile @ community >>>
+[WARNING] The artifact mysql:mysql-connector-java:jar:8.0.33 has been relocated to com.mysql:mysql-connector-j:jar:8.0.33: MySQL Connector/J artifacts moved to reverse-DNS compliant Maven 2+ coordinates.
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ community ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 5 resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ community ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ community ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory D:\Program_Study\fball\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ community ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] <<< spring-boot:2.7.18:run (default-cli) < test-compile @ community <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:2.7.18:run (default-cli) @ community ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::               (v2.7.18)
+
+2026-06-15 16:45:34.576  INFO 24824 --- [           main] c.f.c.FootballCommunityApplication       : Starting FootballCommunityApplication using Java 17.0.11 on 蛟龙16Pro with PID 24824 (D:\Program_Study\fball\backend\target\classes started by Dluca in D:\Program_Study\fball\backend)
+2026-06-15 16:45:34.578  INFO 24824 --- [           main] c.f.c.FootballCommunityApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-06-15 16:45:34.941  INFO 24824 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-06-15 16:45:34.943  INFO 24824 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-06-15 16:45:34.958  INFO 24824 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 7 ms. Found 0 Redis repository interfaces.
+2026-06-15 16:45:35.341  INFO 24824 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2026-06-15 16:45:35.347  INFO 24824 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-15 16:45:35.347  INFO 24824 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-06-15 16:45:35.398  INFO 24824 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-06-15 16:45:35.398  INFO 24824 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 791 ms
+2026-06-15 16:45:35.446  INFO 24824 --- [           main] c.a.d.s.b.a.DruidDataSourceAutoConfigure : Init DruidDataSource
+2026-06-15 16:45:35.731  INFO 24824 --- [           main] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+Logging initialized using 'class org.apache.ibatis.logging.stdout.StdOutImpl' adapter.
+Initialization Sequence datacenterId:14 workerId:21
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.5 
+2026-06-15 16:45:35.873  INFO 24824 --- [           main] o.s.aop.framework.CglibAopProxy          : Unable to proxy interface-implementing method [public final void org.springframework.web.filter.OncePerRequestFilter.doFilter(javax.servlet.ServletRequest,javax.servlet.ServletResponse,javax.servlet.FilterChain) throws javax.servlet.ServletException,java.io.IOException] because it is marked as final: Consider using interface-based JDK proxies instead!
+2026-06-15 16:45:35.873  INFO 24824 --- [           main] o.s.aop.framework.CglibAopProxy          : Unable to proxy interface-implementing method [public final void org.springframework.web.filter.GenericFilterBean.init(javax.servlet.FilterConfig) throws javax.servlet.ServletException] because it is marked as final: Consider using interface-based JDK proxies instead!
+2026-06-15 16:45:36.392  INFO 24824 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@2cf88901, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4780341, org.springframework.security.web.context.SecurityContextPersistenceFilter@56a09a5c, org.springframework.security.web.header.HeaderWriterFilter@58583a2d, org.springframework.web.filter.CorsFilter@3c910acd, org.springframework.security.web.authentication.logout.LogoutFilter@46b21632, com.football.community.security.JwtAuthenticationFilter@4ab66127, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@26f480c6, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2567c091, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@14993306, org.springframework.security.web.session.SessionManagementFilter@6b4fd7d, org.springframework.security.web.access.ExceptionTranslationFilter@32d1d6c5, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@131777e8]
+2026-06-15 16:45:36.630  INFO 24824 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2026-06-15 16:45:36.635  INFO 24824 --- [           main] c.f.c.FootballCommunityApplication       : Started FootballCommunityApplication in 2.272 seconds (JVM running for 2.449)
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@7b58d678] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT id,permission_name,permission_code,parent_id,type,path,icon,sort_order,status,created_at FROM sys_permission WHERE (permission_code = ?)
+==> Parameters: team:dissolve(String)
+<==    Columns: id, permission_name, permission_code, parent_id, type, path, icon, sort_order, status, created_at
+<==        Row: 39, 解散球队, team:dissolve, 6, 2, null, null, 5, 1, null
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@7b58d678]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@47666b39] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: INSERT IGNORE INTO sys_role_permission (role_id, permission_id) VALUES (?, ?)
+==> Parameters: 5(Long), 39(Long)
+<==    Updates: 0
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@47666b39]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@7e514482] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT id,permission_name,permission_code,parent_id,type,path,icon,sort_order,status,created_at FROM sys_permission WHERE (permission_code = ?)
+==> Parameters: team_member:set_status(String)
+<==    Columns: id, permission_name, permission_code, parent_id, type, path, icon, sort_order, status, created_at
+<==        Row: 40, 设置成员状态, team_member:set_status, 12, 2, null, null, 6, 1, null
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@7e514482]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@3c271988] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: INSERT IGNORE INTO sys_role_permission (role_id, permission_id) VALUES (?, ?)
+==> Parameters: 5(Long), 40(Long)
+<==    Updates: 0
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@3c271988]
+2026-06-15 16:46:06.623  INFO 24824 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-15 16:46:06.623  INFO 24824 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-15 16:46:06.624  INFO 24824 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@286b7079] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT id,username,password,email,phone,avatar,nickname,gender,birthday,status,last_login_time,created_at,updated_at FROM users WHERE (username = ?)
+==> Parameters: admin01(String)
+<==    Columns: id, username, password, email, phone, avatar, nickname, gender, birthday, status, last_login_time, created_at, updated_at
+<==        Row: 2, admin01, $2a$10$rJfhY91wvT0fw6jOsgBURO2297y6qclm6SS7OHrqE2khrMVjpw0.W, 3059119581@qq.com, null, null, 系统管理员, 0, null, 1, 2026-06-15 16:41:47, 2026-06-14 15:55:52, 2026-06-14 17:25:26
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@286b7079]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@5a76ed39] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT DISTINCT p.permission_code FROM sys_permission p INNER JOIN sys_role_permission rp ON p.id = rp.permission_id INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id WHERE ur.user_id = ? AND p.status = 1
+==> Parameters: 2(Long)
+<==    Columns: permission_code
+<==        Row: user:manage
+<==        Row: user:view
+<==        Row: user:add
+<==        Row: user:edit
+<==        Row: user:delete
+<==        Row: team:manage
+<==        Row: team:view
+<==        Row: team:add
+<==        Row: team:edit
+<==        Row: team:delete
+<==        Row: team_member:manage
+<==        Row: team_member:view
+<==        Row: team_member:invite
+<==        Row: team_member:approve
+<==        Row: team_member:remove
+<==        Row: team_member:set_admin
+<==        Row: match:manage
+<==        Row: match:view
+<==        Row: match:add
+<==        Row: match:edit
+<==        Row: match:delete
+<==        Row: post:manage
+<==        Row: post:view
+<==        Row: post:add
+<==        Row: post:edit
+<==        Row: post:delete
+<==        Row: product:manage
+<==        Row: product:view
+<==        Row: product:add
+<==        Row: product:edit
+<==        Row: product:delete
+<==        Row: order:manage
+<==        Row: order:view
+<==        Row: order:process
+<==        Row: stat:manage
+<==        Row: stat:match
+<==        Row: stat:sales
+<==        Row: stat:team
+<==        Row: team:dissolve
+<==        Row: team_member:set_status
+<==      Total: 40
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@5a76ed39]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@556f810d] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT r.role_code FROM sys_role r INNER JOIN sys_user_role ur ON r.id = ur.role_id WHERE ur.user_id = ? AND r.status = 1
+==> Parameters: 2(Long)
+<==    Columns: role_code
+<==        Row: admin
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@556f810d]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@36d3a142] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT r.* FROM sys_role r INNER JOIN sys_user_role ur ON r.id = ur.role_id WHERE ur.user_id = ? AND r.status = 1
+==> Parameters: 2(Long)
+<==    Columns: id, role_name, role_code, description, status, created_at, updated_at
+<==        Row: 1, 系统管理员, admin, 拥有系统所有权限, 1, 2026-06-14 15:30:07, 2026-06-14 15:30:07
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@36d3a142]
+2026-06-15 16:46:18.781  INFO 24824 --- [nio-8080-exec-8] c.f.c.service.impl.UserServiceImpl       : 登录验证 - 用户名: admin01, 密码匹配: true
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@a908d85] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: UPDATE users SET username=?, password=?, email=?, nickname=?, gender=?, status=?, last_login_time=?, created_at=?, updated_at=? WHERE id=?
+==> Parameters: admin01(String), $2a$10$rJfhY91wvT0fw6jOsgBURO2297y6qclm6SS7OHrqE2khrMVjpw0.W(String), 3059119581@qq.com(String), 系统管理员(String), 0(Integer), 1(Integer), 2026-06-15T16:46:18.782778800(LocalDateTime), 2026-06-14T15:55:52(LocalDateTime), 2026-06-14T17:25:26(LocalDateTime), 2(Long)
+<==    Updates: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@a908d85]
+2026-06-15 16:46:18.790  INFO 24824 --- [nio-8080-exec-8] c.f.c.service.impl.UserServiceImpl       : 登录成功: 用户名: admin01, ID: 2
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@76073a58] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT id,username,password,email,phone,avatar,nickname,gender,birthday,status,last_login_time,created_at,updated_at FROM users WHERE (username = ?)
+==> Parameters: admin01(String)
+<==    Columns: id, username, password, email, phone, avatar, nickname, gender, birthday, status, last_login_time, created_at, updated_at
+<==        Row: 2, admin01, $2a$10$rJfhY91wvT0fw6jOsgBURO2297y6qclm6SS7OHrqE2khrMVjpw0.W, 3059119581@qq.com, null, null, 系统管理员, 0, null, 1, 2026-06-15 16:46:19, 2026-06-14 15:55:52, 2026-06-14 17:25:26
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@76073a58]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@695c227c] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT DISTINCT p.permission_code FROM sys_permission p INNER JOIN sys_role_permission rp ON p.id = rp.permission_id INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id WHERE ur.user_id = ? AND p.status = 1
+==> Parameters: 2(Long)
+<==    Columns: permission_code
+<==        Row: user:manage
+<==        Row: user:view
+<==        Row: user:add
+<==        Row: user:edit
+<==        Row: user:delete
+<==        Row: team:manage
+<==        Row: team:view
+<==        Row: team:add
+<==        Row: team:edit
+<==        Row: team:delete
+<==        Row: team_member:manage
+<==        Row: team_member:view
+<==        Row: team_member:invite
+<==        Row: team_member:approve
+<==        Row: team_member:remove
+<==        Row: team_member:set_admin
+<==        Row: match:manage
+<==        Row: match:view
+<==        Row: match:add
+<==        Row: match:edit
+<==        Row: match:delete
+<==        Row: post:manage
+<==        Row: post:view
+<==        Row: post:add
+<==        Row: post:edit
+<==        Row: post:delete
+<==        Row: product:manage
+<==        Row: product:view
+<==        Row: product:add
+<==        Row: product:edit
+<==        Row: product:delete
+<==        Row: order:manage
+<==        Row: order:view
+<==        Row: order:process
+<==        Row: stat:manage
+<==        Row: stat:match
+<==        Row: stat:sales
+<==        Row: stat:team
+<==        Row: team:dissolve
+<==        Row: team_member:set_status
+<==      Total: 40
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@695c227c]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@3d22709a] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT r.role_code FROM sys_role r INNER JOIN sys_user_role ur ON r.id = ur.role_id WHERE ur.user_id = ? AND r.status = 1
+==> Parameters: 2(Long)
+<==    Columns: role_code
+<==        Row: admin
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@3d22709a]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@5abb0f1e] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT r.* FROM sys_role r INNER JOIN sys_user_role ur ON r.id = ur.role_id WHERE ur.user_id = ? AND r.status = 1
+==> Parameters: 2(Long)
+<==    Columns: id, role_name, role_code, description, status, created_at, updated_at
+<==        Row: 1, 系统管理员, admin, 拥有系统所有权限, 1, 2026-06-14 15:30:07, 2026-06-14 15:30:07
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@5abb0f1e]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@694dd80d] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT id,username,password,email,phone,avatar,nickname,gender,birthday,status,last_login_time,created_at,updated_at FROM users WHERE (username = ?)
+==> Parameters: admin01(String)
+<==    Columns: id, username, password, email, phone, avatar, nickname, gender, birthday, status, last_login_time, created_at, updated_at
+<==        Row: 2, admin01, $2a$10$rJfhY91wvT0fw6jOsgBURO2297y6qclm6SS7OHrqE2khrMVjpw0.W, 3059119581@qq.com, null, null, 系统管理员, 0, null, 1, 2026-06-15 16:46:19, 2026-06-14 15:55:52, 2026-06-14 17:25:26
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@694dd80d]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@908d829] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT DISTINCT p.permission_code FROM sys_permission p INNER JOIN sys_role_permission rp ON p.id = rp.permission_id INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id WHERE ur.user_id = ? AND p.status = 1
+==> Parameters: 2(Long)
+<==    Columns: permission_code
+<==        Row: user:manage
+<==        Row: user:view
+<==        Row: user:add
+<==        Row: user:edit
+<==        Row: user:delete
+<==        Row: team:manage
+<==        Row: team:view
+<==        Row: team:add
+<==        Row: team:edit
+<==        Row: team:delete
+<==        Row: team_member:manage
+<==        Row: team_member:view
+<==        Row: team_member:invite
+<==        Row: team_member:approve
+<==        Row: team_member:remove
+<==        Row: team_member:set_admin
+<==        Row: match:manage
+<==        Row: match:view
+<==        Row: match:add
+<==        Row: match:edit
+<==        Row: match:delete
+<==        Row: post:manage
+<==        Row: post:view
+<==        Row: post:add
+<==        Row: post:edit
+<==        Row: post:delete
+<==        Row: product:manage
+<==        Row: product:view
+<==        Row: product:add
+<==        Row: product:edit
+<==        Row: product:delete
+<==        Row: order:manage
+<==        Row: order:view
+<==        Row: order:process
+<==        Row: stat:manage
+<==        Row: stat:match
+<==        Row: stat:sales
+<==        Row: stat:team
+<==        Row: team:dissolve
+<==        Row: team_member:set_status
+<==      Total: 40
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@908d829]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@742ef516] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT r.role_code FROM sys_role r INNER JOIN sys_user_role ur ON r.id = ur.role_id WHERE ur.user_id = ? AND r.status = 1
+==> Parameters: 2(Long)
+<==    Columns: role_code
+<==        Row: admin
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@742ef516]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@4961b459] was not registered for synchronization because synchronization is not active
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will not be managed by Spring
+==>  Preparing: SELECT r.* FROM sys_role r INNER JOIN sys_user_role ur ON r.id = ur.role_id WHERE ur.user_id = ? AND r.status = 1
+==> Parameters: 2(Long)
+<==    Columns: id, role_name, role_code, description, status, created_at, updated_at
+<==        Row: 1, 系统管理员, admin, 拥有系统所有权限, 1, 2026-06-14 15:30:07, 2026-06-14 15:30:07
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@4961b459]
+Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@13c9a4a6]
+JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@2d23a5be] will be managed by Spring
+==>  Preparing: SELECT COUNT(*) > 0 FROM team_members WHERE team_id = ? AND user_id = ? AND role = 'admin' AND status = 1
+==> Parameters: 65(Long), 2(Long)
+<==    Columns: COUNT(*) > 0
+<==        Row: 1
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@13c9a4a6]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@13c9a4a6] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM matches WHERE (home_team_id = ? OR away_team_id = ? AND status IN (?,?))
+==> Parameters: 65(Long), 65(Long), 0(Integer), 1(Integer)
+<==    Columns: total
+<==        Row: 1
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@13c9a4a6]
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@13c9a4a6]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@13c9a4a6]
