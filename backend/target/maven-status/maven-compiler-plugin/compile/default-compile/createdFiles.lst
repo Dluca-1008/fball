@@ -62,6 +62,7 @@ com\football\community\entity\Comment.class
 com\football\community\controller\ProductController.class
 com\football\community\repository\PostMapper.class
 com\football\community\service\TeamMemberService.class
+com\football\community\config\OpenApiConfig.class
 com\football\community\config\PaymentConfig$Alipay.class
 com\football\community\controller\StatisticsController.class
 com\football\community\service\impl\TeamServiceImpl.class

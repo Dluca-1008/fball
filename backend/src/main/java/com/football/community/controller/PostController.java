@@ -7,6 +7,11 @@ import com.football.community.security.CustomUserDetails;
 import com.football.community.service.PostService;
 import com.football.community.service.LikeService;
 import com.football.community.service.FavoriteService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
+@Tag(name = "帖子管理", description = "帖子CRUD、点赞、收藏接口")
 public class PostController {
 
     @Autowired
@@ -29,16 +35,30 @@ public class PostController {
     private FavoriteService favoriteService;
 
     @GetMapping
+    @Operation(summary = "获取帖子列表", description = "分页查询帖子，支持关键词和分类筛选")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
     public Result<IPage<Post>> getPosts(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String category) {
+            @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "搜索关键词") @RequestParam(required = false) String keyword,
+            @Parameter(description = "帖子分类") @RequestParam(required = false) String category) {
         return Result.success(postService.getPostList(page, size, keyword, category));
     }
 
     @GetMapping("/{id}")
-    public Result<Map<String, Object>> getPost(@PathVariable Long id,
+    @Operation(summary = "获取帖子详情", description = "根据ID获取帖子详情，自动增加浏览量，返回用户点赞和收藏状态")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Map<String, Object>> getPost(@Parameter(description = "帖子ID", example = "1") @PathVariable Long id,
                                                @AuthenticationPrincipal CustomUserDetails userDetails) {
         postService.incrementViewCount(id);
         Post post = postService.getById(id);
@@ -55,7 +75,15 @@ public class PostController {
     }
 
     @PostMapping
-    public Result<Post> createPost(@RequestBody Post post,
+    @Operation(summary = "创建帖子", description = "创建新帖子")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Post> createPost(@Parameter(description = "帖子信息") @RequestBody Post post,
                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
         post.setUserId(userDetails.getId());
         return Result.success(postService.createPost(post));
@@ -63,19 +91,42 @@ public class PostController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('post:edit')")
-    public Result<Post> updatePost(@PathVariable Long id, @RequestBody Post post) {
+    @Operation(summary = "更新帖子", description = "根据ID更新帖子内容")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Post> updatePost(@Parameter(description = "帖子ID", example = "1") @PathVariable Long id, @Parameter(description = "帖子信息") @RequestBody Post post) {
         return Result.success(postService.updatePost(id, post));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('post:delete')")
-    public Result<?> deletePost(@PathVariable Long id) {
+    @Operation(summary = "删除帖子", description = "根据ID删除帖子")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> deletePost(@Parameter(description = "帖子ID", example = "1") @PathVariable Long id) {
         postService.deletePost(id);
         return Result.success();
     }
 
     @PostMapping("/{id}/like")
-    public Result<Map<String, Object>> likePost(@PathVariable Long id,
+    @Operation(summary = "点赞帖子", description = "切换用户对帖子的点赞状态")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Map<String, Object>> likePost(@Parameter(description = "帖子ID", example = "1") @PathVariable Long id,
                               @AuthenticationPrincipal CustomUserDetails userDetails) {
         boolean liked = likeService.toggleLike(userDetails.getId(), id, 1);
         long count = likeService.countByTarget(id, 1);
@@ -87,7 +138,14 @@ public class PostController {
     }
 
     @PostMapping("/{id}/favorite")
-    public Result<Map<String, Object>> favoritePost(@PathVariable Long id,
+    @Operation(summary = "收藏帖子", description = "切换用户对帖子的收藏状态")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Map<String, Object>> favoritePost(@Parameter(description = "帖子ID", example = "1") @PathVariable Long id,
                               @AuthenticationPrincipal CustomUserDetails userDetails) {
         boolean favorited = favoriteService.toggleFavorite(userDetails.getId(), id, 1);
         long count = favoriteService.countByTarget(id, 1);

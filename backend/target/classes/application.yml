@@ -57,3 +57,16 @@ logging:
     com.football: INFO
     org.apache.ibatis: INFO
     com.baomidou.mybatisplus: INFO
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    disable-swagger-default-url: true
+  paths-to-match:
+    - /api/**
+    - /admin/**
+    - /auth/**

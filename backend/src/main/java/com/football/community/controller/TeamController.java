@@ -8,6 +8,11 @@ import com.football.community.entity.TeamMember;
 import com.football.community.security.CustomUserDetails;
 import com.football.community.service.TeamService;
 import com.football.community.service.TeamMemberService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/teams")
+@Tag(name = "球队管理", description = "球队及成员管理接口")
 public class TeamController {
 
     @Autowired
@@ -27,21 +33,43 @@ public class TeamController {
     private TeamMemberService teamMemberService;
 
     @GetMapping
+    @Operation(summary = "获取球队列表", description = "分页查询球队，支持关键词搜索")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
     public Result<IPage<Team>> getTeams(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String keyword) {
+            @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "搜索关键词") @RequestParam(required = false) String keyword) {
         return Result.success(teamService.getTeamList(page, size, keyword));
     }
 
     @GetMapping("/{id}")
-    public Result<Team> getTeam(@PathVariable Long id) {
+    @Operation(summary = "获取球队详情", description = "根据ID获取球队详细信息")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Team> getTeam(@Parameter(description = "球队ID", example = "1") @PathVariable Long id) {
         return Result.success(teamService.getById(id));
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('team:add')")
-    public Result<Team> createTeam(@RequestBody Map<String, Object> body,
+    @Operation(summary = "创建球队", description = "创建新球队并设置管理员")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Team> createTeam(@Parameter(description = "球队信息") @RequestBody Map<String, Object> body,
                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
         Team team = new Team();
         team.setName((String) body.get("name"));
@@ -59,31 +87,69 @@ public class TeamController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('team:edit')")
-    public Result<Team> updateTeam(@PathVariable Long id, @RequestBody Team team) {
+    @Operation(summary = "更新球队", description = "根据ID更新球队信息")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<Team> updateTeam(@Parameter(description = "球队ID", example = "1") @PathVariable Long id, @Parameter(description = "球队信息") @RequestBody Team team) {
         return Result.success(teamService.updateTeam(id, team));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('team:delete')")
-    public Result<?> deleteTeam(@PathVariable Long id) {
+    @Operation(summary = "删除球队", description = "根据ID删除球队")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> deleteTeam(@Parameter(description = "球队ID", example = "1") @PathVariable Long id) {
         teamService.deleteTeam(id);
         return Result.success();
     }
 
     @GetMapping("/{teamId}/members")
-    public Result<?> getMembers(@PathVariable Long teamId) {
+    @Operation(summary = "获取球队成员", description = "获取指定球队的所有成员列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> getMembers(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId) {
         return Result.success(teamMemberService.getMembersByTeamId(teamId));
     }
 
     @GetMapping("/{teamId}/applications")
     @PreAuthorize("hasAuthority('team_member:approve')")
-    public Result<List<TeamApplication>> getApplications(@PathVariable Long teamId) {
+    @Operation(summary = "获取入队申请列表", description = "获取指定球队的入队申请列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<List<TeamApplication>> getApplications(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId) {
         return Result.success(teamMemberService.getApplicationsByTeamId(teamId));
     }
 
     @PostMapping("/{teamId}/members/apply")
-    public Result<?> applyToJoin(@PathVariable Long teamId,
-                                 @RequestBody Map<String, Object> body,
+    @Operation(summary = "申请加入球队", description = "用户申请加入指定球队")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> applyToJoin(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId,
+                                 @Parameter(description = "申请信息") @RequestBody Map<String, Object> body,
                                  @AuthenticationPrincipal CustomUserDetails userDetails) {
         String reason = (String) body.get("reason");
         String memberType = (String) body.get("memberType");
@@ -94,14 +160,28 @@ public class TeamController {
     }
 
     @GetMapping("/my/invitations")
+    @Operation(summary = "获取我的邀请", description = "获取当前用户收到的加入球队邀请")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
     public Result<List<Map<String, Object>>> getMyInvitations(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return Result.success(teamMemberService.getMyInvitations(userDetails.getId()));
     }
 
     @PutMapping("/invitations/{invitationId}/respond")
-    public Result<?> respondToInvitation(@PathVariable Long invitationId,
-                                         @RequestBody Map<String, Object> body,
+    @Operation(summary = "响应邀请", description = "接受或拒绝加入球队的邀请")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> respondToInvitation(@Parameter(description = "邀请ID", example = "1") @PathVariable Long invitationId,
+                                         @Parameter(description = "响应信息") @RequestBody Map<String, Object> body,
                                          @AuthenticationPrincipal CustomUserDetails userDetails) {
         Object acceptObj = body.get("accept");
         boolean accept = acceptObj instanceof Boolean ? (Boolean) acceptObj : Boolean.parseBoolean(String.valueOf(acceptObj));
@@ -114,17 +194,33 @@ public class TeamController {
 
     @PostMapping("/{teamId}/members/invite")
     @PreAuthorize("hasAuthority('team_member:invite')")
-    public Result<?> inviteMember(@PathVariable Long teamId,
-                                  @RequestParam Long userId,
+    @Operation(summary = "邀请用户加入", description = "邀请指定用户加入球队")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> inviteMember(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId,
+                                  @Parameter(description = "用户ID") @RequestParam Long userId,
                                   @AuthenticationPrincipal CustomUserDetails userDetails) {
         return Result.success(teamMemberService.inviteMember(teamId, userId, userDetails.getId()));
     }
 
     @PutMapping("/{teamId}/members/{userId}/approve")
     @PreAuthorize("hasAuthority('team_member:approve')")
-    public Result<?> approveApplication(@PathVariable Long teamId,
-                                        @PathVariable Long userId,
-                                        @RequestBody Map<String, Object> body,
+    @Operation(summary = "审批入队申请", description = "审批用户的入队申请，通过或拒绝")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> approveApplication(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId,
+                                        @Parameter(description = "用户ID", example = "1") @PathVariable Long userId,
+                                        @Parameter(description = "审批信息") @RequestBody Map<String, Object> body,
                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
         Integer status = (Integer) body.get("status");
         String memberType = (String) body.get("memberType");
@@ -136,8 +232,16 @@ public class TeamController {
 
     @PutMapping("/{teamId}/members/{userId}/remove")
     @PreAuthorize("hasAuthority('team_member:remove')")
-    public Result<?> removeMember(@PathVariable Long teamId,
-                                  @PathVariable Long userId,
+    @Operation(summary = "移除成员", description = "将指定用户从球队中移除")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> removeMember(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId,
+                                  @Parameter(description = "用户ID", example = "1") @PathVariable Long userId,
                                   @AuthenticationPrincipal CustomUserDetails userDetails) {
         teamMemberService.removeMember(teamId, userId, userDetails.getId());
         return Result.success();
@@ -145,9 +249,17 @@ public class TeamController {
 
     @PutMapping("/{teamId}/members/{userId}/role")
     @PreAuthorize("hasAuthority('team_member:set_admin')")
-    public Result<?> setMemberRole(@PathVariable Long teamId,
-                                   @PathVariable Long userId,
-                                   @RequestParam String role,
+    @Operation(summary = "设置成员角色", description = "修改指定用户在球队中的角色")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> setMemberRole(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId,
+                                   @Parameter(description = "用户ID", example = "1") @PathVariable Long userId,
+                                   @Parameter(description = "角色名称") @RequestParam String role,
                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
         teamMemberService.setMemberRole(teamId, userId, role, userDetails.getId());
         return Result.success();
@@ -155,9 +267,17 @@ public class TeamController {
 
     @PutMapping("/{teamId}/members/{userId}/status")
     @PreAuthorize("hasAuthority('team_member:set_status')")
-    public Result<?> setMemberStatus(@PathVariable Long teamId,
-                                     @PathVariable Long userId,
-                                     @RequestBody Map<String, Object> body,
+    @Operation(summary = "设置成员状态", description = "修改指定用户在球队中的状态（正常/禁言/封禁）")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> setMemberStatus(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId,
+                                     @Parameter(description = "用户ID", example = "1") @PathVariable Long userId,
+                                     @Parameter(description = "状态信息") @RequestBody Map<String, Object> body,
                                      @AuthenticationPrincipal CustomUserDetails userDetails) {
         Integer status = (Integer) body.get("status");
         teamMemberService.setMemberStatus(teamId, userId, status, userDetails.getId());
@@ -166,7 +286,15 @@ public class TeamController {
 
     @PutMapping("/{teamId}/dissolve")
     @PreAuthorize("hasAuthority('team:dissolve')")
-    public Result<?> dissolveTeam(@PathVariable Long teamId,
+    @Operation(summary = "解散球队", description = "解散指定球队")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    public Result<?> dissolveTeam(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId,
                                   @AuthenticationPrincipal CustomUserDetails userDetails) {
         teamService.dissolveTeam(teamId, userDetails.getId());
         return Result.success();
