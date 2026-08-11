@@ -51,7 +51,6 @@
                 v-model="form.username"
                 placeholder="用户名"
                 size="large"
-                :prefix-icon="User"
               />
             </div>
           </el-form-item>
@@ -65,7 +64,6 @@
                 placeholder="密码"
                 size="large"
                 show-password
-                :prefix-icon="Lock"
               />
             </div>
           </el-form-item>
@@ -313,8 +311,7 @@ async function handleLogin() {
 
 .input-wrap {
   position: relative;
-  display: flex;
-  align-items: center;
+  width: 100%;
 }
 
 .input-icon {
@@ -325,6 +322,9 @@ async function handleLogin() {
   font-size: 18px;
 }
 
+:deep(.el-input) {
+  width: 100%;
+}
 :deep(.el-input__wrapper) {
   padding-left: 44px !important;
   background: rgba(255, 255, 255, 0.07) !important;
@@ -332,6 +332,7 @@ async function handleLogin() {
   border-radius: 12px !important;
   box-shadow: none !important;
   transition: all 0.25s;
+  width: 100%;
 }
 
 :deep(.el-input__wrapper:hover) {

@@ -324,8 +324,7 @@ async function handleRegister() {
 
 .input-wrap {
   position: relative;
-  display: flex;
-  align-items: center;
+  width: 100%;
 }
 .input-icon {
   position: absolute;
@@ -334,6 +333,9 @@ async function handleRegister() {
   color: #64748b;
   font-size: 18px;
 }
+:deep(.el-input) {
+  width: 100%;
+}
 :deep(.el-input__wrapper) {
   padding-left: 44px !important;
   background: rgba(255, 255, 255, 0.07) !important;
@@ -341,6 +343,7 @@ async function handleRegister() {
   border-radius: 12px !important;
   box-shadow: none !important;
   transition: all 0.25s;
+  width: 100%;
 }
 :deep(.el-input__wrapper:hover) {
   border-color: rgba(124, 58, 237, 0.5) !important;
