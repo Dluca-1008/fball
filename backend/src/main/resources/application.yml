@@ -44,7 +44,7 @@ mybatis-plus:
       logic-not-delete-value: 0
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 jwt:
   secret: football-community-secret-key-2024
@@ -53,10 +53,7 @@ jwt:
   prefix: "Bearer "
 
 logging:
-  level:
-    com.football: INFO
-    org.apache.ibatis: INFO
-    com.baomidou.mybatisplus: INFO
+  config: classpath:logback-spring.xml
 
 springdoc:
   api-docs:

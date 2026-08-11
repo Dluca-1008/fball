@@ -24,14 +24,12 @@ public class MatchHandler extends TextWebSocketHandler {
         Long matchId = getMatchIdFromSession(session);
         if (matchId != null) {
             matchSessions.computeIfAbsent(matchId, k -> ConcurrentHashMap.newKeySet()).add(session);
-            log.info("新客户端连接到赛事 {} 的实时推送", matchId);
         }
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         // 客户端可以发送订阅/取消订阅消息
-        log.debug("收到客户端消息: {}", message.getPayload());
     }
 
     @Override
@@ -46,7 +44,6 @@ public class MatchHandler extends TextWebSocketHandler {
                 }
             }
         }
-        log.info("客户端断开连接");
     }
 
     @Override

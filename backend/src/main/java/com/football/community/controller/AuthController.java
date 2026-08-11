@@ -6,6 +6,7 @@ import com.football.community.dto.ChangePasswordDto;
 import com.football.community.dto.Result;
 import com.football.community.entity.User;
 import com.football.community.security.JwtTokenProvider;
+import com.football.community.security.TokenSessionService;
 import com.football.community.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,6 +37,9 @@ public class AuthController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private TokenSessionService tokenSessionService;
 
     @Operation(summary = "用户注册", description = "使用用户名和密码注册新账号")
     @ApiResponses({
@@ -114,7 +118,9 @@ public class AuthController {
     public Result<?> changePassword(@Valid @RequestBody @Parameter(description = "密码修改信息") ChangePasswordDto dto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
+        User user = userService.findByUsername(username);
         userService.changePassword(username, dto);
+        tokenSessionService.revokeUserTokens(user.getId());
         return Result.success();
     }
 }

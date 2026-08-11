@@ -10,6 +10,7 @@ import com.football.community.exception.BusinessException;
 import com.football.community.repository.OrderMapper;
 import com.football.community.service.OrderService;
 import com.football.community.service.ProductService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
 
@@ -39,7 +42,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
         product.setStock(product.getStock() - quantity);
         product.setSalesCount(product.getSalesCount() + quantity);
-        productService.updateById(product);
+        boolean updated = productService.updateById(product);
+        if (!updated) {
+            throw new BusinessException("库存更新失败，请稍后重试");
+        }
 
         Order order = new Order();
         order.setOrderNo(generateOrderNo());
@@ -85,6 +91,27 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setStatus(1);
         order.setPaymentTime(LocalDateTime.now());
         updateById(order);
+    }
+
+    @Override
+    @Transactional
+    public void cancelExpiredOrders() {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(30);
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Order::getStatus, 0)
+               .lt(Order::getCreatedAt, threshold);
+        List<Order> expiredOrders = list(wrapper);
+        for (Order order : expiredOrders) {
+            Product product = productService.getById(order.getProductId());
+            if (product != null) {
+                product.setStock(product.getStock() + order.getQuantity());
+                product.setSalesCount(product.getSalesCount() - order.getQuantity());
+                productService.updateById(product);
+            }
+            order.setStatus(2);
+            updateById(order);
+            log.info("订单已过期取消，恢复库存: orderNo={}", order.getOrderNo());
+        }
     }
 
     private String generateOrderNo() {

@@ -7,24 +7,31 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.football.community.dto.LoginDto;
 import com.football.community.dto.RegisterDto;
 import com.football.community.dto.ChangePasswordDto;
+import com.football.community.entity.ChatMessage;
+import com.football.community.entity.Comment;
+import com.football.community.entity.Order;
+import com.football.community.entity.Post;
 import com.football.community.entity.User;
 import com.football.community.exception.BusinessException;
+import com.football.community.repository.ChatMessageMapper;
+import com.football.community.repository.CommentMapper;
+import com.football.community.repository.OrderMapper;
+import com.football.community.repository.PostMapper;
 import com.football.community.repository.UserMapper;
 import com.football.community.repository.RoleMapper;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import com.football.community.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -34,6 +41,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private RoleMapper roleMapper;
+
+    @Autowired
+    private PostMapper postMapper;
+
+    @Autowired
+    private CommentMapper commentMapper;
+
+    @Autowired
+    private OrderMapper orderMapper;
+
+    @Autowired
+    private ChatMessageMapper chatMessageMapper;
 
     @Override
     public User findByUsername(String username) {
@@ -86,8 +105,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         boolean matches = passwordEncoder.matches(dto.getPassword(), user.getPassword());
-        log.info("登录验证 - 用户名: {}, 密码匹配: {}", dto.getUsername(), matches);
-
         if (!matches) {
             log.error("登录失败: 密码错误 - 用户名: {}", dto.getUsername());
             throw new BusinessException("密码错误");
@@ -100,8 +117,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         user.setLastLoginTime(LocalDateTime.now());
         updateById(user);
-
-        log.info("登录成功: 用户名: {}, ID: {}", dto.getUsername(), user.getId());
         return user;
     }
 
@@ -149,12 +164,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long userId) {
         User user = getById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
-        removeById(userId);
+        // Soft delete: set status=0
+        user.setStatus(0);
+        user.setUpdatedAt(LocalDateTime.now());
+        updateById(user);
+        // Cascade cleanup
+        postMapper.delete(new LambdaQueryWrapper<Post>().eq(Post::getUserId, userId));
+        commentMapper.delete(new LambdaQueryWrapper<Comment>().eq(Comment::getUserId, userId));
+        orderMapper.delete(new LambdaQueryWrapper<Order>().eq(Order::getUserId, userId));
+        chatMessageMapper.delete(new LambdaQueryWrapper<ChatMessage>()
+                .eq(ChatMessage::getSenderId, userId)
+                .or().eq(ChatMessage::getReceiverId, userId));
     }
 
     @Override

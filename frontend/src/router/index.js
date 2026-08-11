@@ -14,41 +14,60 @@ const routes = [
   },
   {
     path: '/',
-    component: () => import('@/layouts/MainLayout.vue'),
+    component: () => import('@/layouts/SidebarLayout.vue'),
     children: [
       {
         path: '',
         name: 'Home',
         component: () => import('@/views/Home.vue')
       },
+
+      // ── 社区 ──
       {
-        path: 'teams',
-        name: 'Teams',
-        component: () => import('@/views/team/TeamList.vue')
+        path: 'posts',
+        name: 'Posts',
+        component: () => import('@/views/post/PostList.vue')
       },
       {
-        path: 'teams/create',
-        name: 'TeamCreate',
-        component: () => import('@/views/team/TeamCreate.vue'),
-        meta: { requiresAuth: true }
+        path: 'posts/:id',
+        name: 'PostDetail',
+        component: () => import('@/views/post/PostDetail.vue')
       },
       {
-        path: 'teams/:id',
-        name: 'TeamDetail',
-        component: () => import('@/views/team/TeamDetail.vue')
+        path: 'chat',
+        name: 'Chat',
+        component: () => import('@/views/chat/ChatList.vue')
+      },
+
+      // ── 商城 ──
+      {
+        path: 'shop',
+        component: () => import('@/layouts/ShopLayout.vue'),
+        children: [
+          {
+            path: 'products',
+            name: 'ShopProducts',
+            component: () => import('@/views/shop/ProductList.vue')
+          },
+          {
+            path: 'products/:id',
+            name: 'ProductDetail',
+            component: () => import('@/views/product/ProductDetail.vue')
+          },
+          {
+            path: 'orders',
+            name: 'ShopOrders',
+            component: () => import('@/views/shop/OrderList.vue')
+          }
+        ]
       },
       {
-        path: 'teams/:id/manage',
-        name: 'TeamManage',
-        component: () => import('@/views/team/TeamManage.vue'),
-        meta: { requiresAuth: true }
+        path: 'cart',
+        name: 'Cart',
+        component: () => import('@/views/cart/CartList.vue')
       },
-      {
-        path: 'my-invitations',
-        name: 'MyInvitations',
-        component: () => import('@/views/team/MyInvitations.vue'),
-        meta: { requiresAuth: true }
-      },
+
+      // ── 赛事 ──
       {
         path: 'matches',
         name: 'Matches',
@@ -85,18 +104,32 @@ const routes = [
         path: 'matches/:id/manage',
         name: 'MatchManage',
         component: () => import('@/views/match/MatchManage.vue'),
+        meta: { requiresAuth: true, permission: 'match:edit' }
+      },
+
+      {
+        path: 'teams',
+        name: 'Teams',
+        component: () => import('@/views/team/TeamList.vue')
+      },
+      {
+        path: 'teams/create',
+        name: 'TeamCreate',
+        component: () => import('@/views/team/TeamCreate.vue'),
         meta: { requiresAuth: true }
       },
       {
-        path: 'posts',
-        name: 'Posts',
-        component: () => import('@/views/post/PostList.vue')
+        path: 'teams/:id',
+        name: 'TeamDetail',
+        component: () => import('@/views/team/TeamDetail.vue')
       },
       {
-        path: 'posts/:id',
-        name: 'PostDetail',
-        component: () => import('@/views/post/PostDetail.vue')
+        path: 'teams/:id/manage',
+        name: 'TeamManage',
+        component: () => import('@/views/team/TeamManage.vue'),
+        meta: { requiresAuth: true, permission: 'team:edit' }
       },
+
       {
         path: 'players',
         name: 'Players',
@@ -112,8 +145,9 @@ const routes = [
         path: 'players/:id/manage',
         name: 'PlayerManage',
         component: () => import('@/views/player/PlayerManage.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, permission: 'player:edit' }
       },
+
       {
         path: 'coaches',
         name: 'Coaches',
@@ -129,56 +163,41 @@ const routes = [
         path: 'coaches/:id/manage',
         name: 'CoachManage',
         component: () => import('@/views/coach/CoachManage.vue'),
+        meta: { requiresAuth: true, permission: 'coach:edit' }
+      },
+
+      // ── 个人中心 ──
+      {
+        path: 'my-invitations',
+        name: 'MyInvitations',
+        component: () => import('@/views/team/MyInvitations.vue'),
         meta: { requiresAuth: true }
-      },
-      {
-        path: 'products',
-        name: 'Products',
-        component: () => import('@/views/product/ProductList.vue')
-      },
-      {
-        path: 'products/:id',
-        name: 'ProductDetail',
-        component: () => import('@/views/product/ProductDetail.vue')
-      },
-      {
-        path: 'orders',
-        name: 'Orders',
-        component: () => import('@/views/order/OrderList.vue')
-      },
-      {
-        path: 'cart',
-        name: 'Cart',
-        component: () => import('@/views/cart/CartList.vue')
-      },
-      {
-        path: 'chat',
-        name: 'Chat',
-        component: () => import('@/views/chat/ChatList.vue')
       },
       {
         path: 'change-password',
         name: 'ChangePassword',
         component: () => import('@/views/auth/ChangePassword.vue'),
         meta: { requiresAuth: true }
+      }
+    ]
+  },
+
+  // ── 管理后台 ──
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('@/views/admin/AdminLayout.vue'),
+    meta: { requiresAuth: true, permission: 'user:view' },
+    children: [
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/UserList.vue')
       },
       {
-        path: 'admin',
-        name: 'Admin',
-        component: () => import('@/views/admin/AdminLayout.vue'),
-        meta: { requiresAuth: true, permission: 'user:view' },
-        children: [
-          {
-            path: 'users',
-            name: 'AdminUsers',
-            component: () => import('@/views/admin/UserList.vue')
-          },
-          {
-            path: 'roles',
-            name: 'AdminRoles',
-            component: () => import('@/views/admin/RoleList.vue')
-          }
-        ]
+        path: 'roles',
+        name: 'AdminRoles',
+        component: () => import('@/views/admin/RoleList.vue')
       }
     ]
   }
@@ -189,14 +208,30 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
   if (to.meta.requiresAuth && !userStore.token) {
     next('/login')
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.permission && userStore.token) {
+    if (!userStore.permissions || userStore.permissions.length === 0) {
+      try {
+        await userStore.fetchPermissions()
+      } catch {
+        next('/login')
+        return
+      }
+    }
+    if (!userStore.hasPermission(to.meta.permission)) {
+      next('/403')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

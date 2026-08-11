@@ -10,9 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.UUID;
 
 @Slf4j
@@ -48,11 +51,9 @@ public class PaymentServiceImpl implements PaymentService {
         if ("wechat".equals(paymentType)) {
             result.put("appId", paymentConfig.getWechat().getAppId());
             result.put("mchId", paymentConfig.getWechat().getMchId());
-            // 实际项目中需要生成预付单并返回小程序调起支付的参数
             result.put("message", "微信支付参数（需对接微信支付API）");
         } else if ("alipay".equals(paymentType)) {
             result.put("appId", paymentConfig.getAlipay().getAppId());
-            // 实际项目中需要生成支付表单或链接
             result.put("message", "支付宝支付参数（需对接支付宝API）");
         }
 
@@ -63,21 +64,60 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public boolean verifyPayment(String paymentType, Map<String, String> params) {
-        // 实际项目中需要验证支付签名
-        // 这里简化处理，直接返回true
-        log.info("验证支付回调: 支付方式={}, 参数={}", paymentType, params);
-        return true;
+        if (params == null) {
+            log.error("支付回调参数为空");
+            return false;
+        }
+
+        // 1. Required fields check
+        String orderNo = params.get("orderNo");
+        String totalFee = params.get("totalFee");
+        String transactionId = params.get("transactionId");
+        if (orderNo == null || totalFee == null || transactionId == null) {
+            log.error("回调参数缺少必填字段: orderNo={}, totalFee={}, transactionId={}", orderNo, totalFee, transactionId);
+            return false;
+        }
+
+        // 2. Amount consistency (±0.01 tolerance)
+        Order order = orderService.lambdaQuery().eq(Order::getOrderNo, orderNo).one();
+        if (order == null) {
+            log.error("订单不存在: orderNo={}", orderNo);
+            return false;
+        }
+        BigDecimal callbackAmount = new BigDecimal(totalFee);
+        if (callbackAmount.subtract(order.getTotalAmount()).abs().compareTo(new BigDecimal("0.01")) > 0) {
+            log.warn("金额不一致: orderNo={}, callback={}, order={}", orderNo, callbackAmount, order.getTotalAmount());
+            return false;
+        }
+
+        // 3. Idempotency check
+        if (order.getStatus() == 1) {
+            log.info("订单已支付，跳过重复回调: orderNo={}", orderNo);
+            return true;
+        }
+
+        // 4. HMAC-SHA256 signature verification
+        return verifySignature(paymentType, params);
     }
 
     @Override
     @Transactional
     public void handlePaymentCallback(String paymentType, Map<String, String> params) {
+        // Idempotency guard
+        String orderNo = params != null ? params.get("orderNo") : null;
+        if (orderNo != null) {
+            Order order = orderService.lambdaQuery().eq(Order::getOrderNo, orderNo).one();
+            if (order != null && order.getStatus() == 1) {
+                log.info("订单已支付，跳过重复回调: orderNo={}", orderNo);
+                return;
+            }
+        }
+
         if (!verifyPayment(paymentType, params)) {
             log.error("支付验证失败: 支付方式={}, 参数={}", paymentType, params);
             return;
         }
 
-        String orderNo = params.get("orderNo");
         if (orderNo == null) {
             log.error("回调参数缺少orderNo");
             return;
@@ -99,5 +139,63 @@ public class PaymentServiceImpl implements PaymentService {
         orderService.updateById(order);
 
         log.info("订单支付成功: orderNo={}", orderNo);
+    }
+
+    private boolean verifySignature(String paymentType, Map<String, String> params) {
+        String signature = params.get("signature");
+        if (signature == null) {
+            log.error("回调参数缺少signature");
+            return false;
+        }
+
+        String secret;
+        if ("wechat".equals(paymentType)) {
+            secret = paymentConfig.getWechat().getApiKey();
+        } else if ("alipay".equals(paymentType)) {
+            secret = paymentConfig.getAlipay().getPrivateKey();
+        } else {
+            log.error("不支持的支付方式: {}", paymentType);
+            return false;
+        }
+
+        if (secret == null || secret.isEmpty()) {
+            log.error("支付密钥未配置: paymentType={}", paymentType);
+            return false;
+        }
+
+        // Build canonical query string (sort keys, exclude signature)
+        Map<String, String> sortedParams = new TreeMap<>(params);
+        sortedParams.remove("signature");
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : sortedParams.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
+            }
+        }
+        sb.append("key=").append(secret);
+
+        String expectedSig = hmacSha256(sb.toString(), secret);
+        boolean valid = expectedSig.equalsIgnoreCase(signature);
+        if (!valid) {
+            log.warn("签名验证失败: expected={}, actual={}", expectedSig, signature);
+        }
+        return valid;
+    }
+
+    private String hmacSha256(String data, String key) {
+        try {
+            Mac hmac = Mac.getInstance("HmacSHA256");
+            hmac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] result = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : result) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            log.error("HMAC-SHA256计算失败", e);
+            return "";
+        }
     }
 }

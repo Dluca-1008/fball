@@ -26,6 +26,9 @@ public class Product {
 
     private Integer salesCount;
 
+    @Version
+    private Integer version;
+
     private String images;
 
     private Integer status;

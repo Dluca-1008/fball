@@ -339,7 +339,7 @@ async function handleDelete() { await ElMessageBox.confirm('确定删除该比�
 async function handleBatchInvite() {
   if (selectedTeamIds.value.length === 0) { ElMessage.warning('请选择球队'); return }
   inviting.value = true
-  try { await request.post(`/api/matches/${matchId}/invite`, { teamIds: selectedTeamIds.value }); ElMessage.success('邀请成功'); inviteDialogVisible.value = false; selectedTeamIds.value = []; fetchRegistrations() }
+  try { await request.post(`/api/matches/${matchId}/invite`, selectedTeamIds.value); ElMessage.success('邀请成功'); inviteDialogVisible.value = false; selectedTeamIds.value = []; fetchRegistrations() }
   finally { inviting.value = false }
 }
 

@@ -1,6 +1,7 @@
 package com.football.community.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.football.community.dto.CreatePostRequest;
 import com.football.community.dto.Result;
 import com.football.community.entity.Post;
 import com.football.community.security.CustomUserDetails;
@@ -17,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,9 +85,17 @@ public class PostController {
             @ApiResponse(responseCode = "403", description = "无权限"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
-    public Result<Post> createPost(@Parameter(description = "帖子信息") @RequestBody Post post,
+    public Result<Post> createPost(@Valid @RequestBody CreatePostRequest request,
                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Post post = new Post();
+        post.setTitle(request.getTitle());
+        post.setContent(request.getContent());
+        post.setCategory(request.getCategory());
         post.setUserId(userDetails.getId());
+        post.setViewCount(0);
+        post.setLikeCount(0);
+        post.setCommentCount(0);
+        post.setStatus(1);
         return Result.success(postService.createPost(post));
     }
 

@@ -29,7 +29,6 @@ public class ChatHandler extends TextWebSocketHandler {
         Long userId = getUserIdFromSession(session);
         if (userId != null) {
             sessions.put(userId, session);
-            log.info("用户 {} 已连接聊天服务器", userId);
         }
     }
 
@@ -63,7 +62,6 @@ public class ChatHandler extends TextWebSocketHandler {
         Long userId = getUserIdFromSession(session);
         if (userId != null) {
             sessions.remove(userId);
-            log.info("用户 {} 已断开聊天服务器", userId);
         }
     }
 

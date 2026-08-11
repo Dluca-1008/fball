@@ -33,9 +33,10 @@ public interface ChatService extends IService<ChatMessage> {
     /**
      * 获取有聊天记录的用户列表。
      * @param userId 用户ID
+     * @param limit 最大返回数量
      * @return 聊天用户列表
      */
-    List<Map<String, Object>> getChatList(Long userId);
+    List<Map<String, Object>> getChatList(Long userId, int limit);
 
     /**
      * 将来自发送者的消息标记为已读。

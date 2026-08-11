@@ -19,6 +19,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useWebSocket } from '@/composables/useWebSocket'
 
 const props = defineProps({
   matchId: { type: [Number, String], required: true }
@@ -27,47 +28,27 @@ const props = defineProps({
 const emit = defineEmits(['update'])
 
 const match = ref(null)
-let websocket = null
 
-function connectWebSocket() {
-  const wsUrl = `ws://localhost:8080/ws/match/${props.matchId}`
-  websocket = new WebSocket(wsUrl)
-
-  websocket.onmessage = (event) => {
-    const data = JSON.parse(event.data)
-    match.value = data
-    emit('update', data)
-  }
-
-  websocket.onclose = () => {
-    console.log('WebSocket连接关闭')
-    setTimeout(connectWebSocket, 3000)
-  }
-
-  websocket.onerror = (error) => {
-    console.error('WebSocket错误:', error)
-  }
+function getMatchWebSocketUrl() {
+  const token = localStorage.getItem('token')
+  const base = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
+  return `${base}/ws/match/${props.matchId}?token=${token}`
 }
 
-function getStatusText(status) {
-  const texts = { 0: '未开始', 1: '进行中', 2: '已结束' }
-  return texts[status] || '未知'
-}
+const { connect, send, onMessage, close } = useWebSocket(getMatchWebSocketUrl, { reconnectDelay: 3000, autoReconnect: true })
+
+onMessage((data) => {
+  match.value = data
+  emit('update', data)
+})
 
 watch(() => props.matchId, () => {
-  if (websocket) {
-    websocket.close()
-  }
-  connectWebSocket()
+  connect()
 })
 
-onMounted(connectWebSocket)
+onMounted(connect)
 
-onUnmounted(() => {
-  if (websocket) {
-    websocket.close()
-  }
-})
+onUnmounted(close)
 </script>
 
 <style scoped>

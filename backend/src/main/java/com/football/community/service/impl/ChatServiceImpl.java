@@ -49,10 +49,11 @@ public class ChatServiceImpl extends ServiceImpl<ChatMessageMapper, ChatMessage>
     }
 
     @Override
-    public List<Map<String, Object>> getChatList(Long userId) {
+    public List<Map<String, Object>> getChatList(Long userId, int limit) {
         LambdaQueryWrapper<ChatMessage> wrapper = new LambdaQueryWrapper<>();
         wrapper.and(w -> w.eq(ChatMessage::getSenderId, userId).or().eq(ChatMessage::getReceiverId, userId));
         wrapper.orderByDesc(ChatMessage::getCreatedAt);
+        wrapper.last("LIMIT " + limit);
 
         List<ChatMessage> messages = list(wrapper);
 

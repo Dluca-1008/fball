@@ -1,7 +1,10 @@
 package com.football.community.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.football.community.dto.RegistrationResponseRequest;
+import com.football.community.dto.ScheduleGenerateRequest;
 import com.football.community.dto.Result;
+import com.football.community.dto.TeamRegisterRequest;
 import com.football.community.entity.Match;
 import com.football.community.entity.MatchRegistration;
 import com.football.community.security.CustomUserDetails;
@@ -17,11 +20,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
+import javax.validation.Valid;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/matches")
@@ -115,10 +115,9 @@ public class MatchController {
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     public Result<?> registerTeam(@Parameter(description = "比赛ID", example = "1") @PathVariable Long matchId,
-                                  @Parameter(description = "报名信息") @RequestBody Map<String, Object> body,
+                                  @Valid @RequestBody @Parameter(description = "报名信息") TeamRegisterRequest request,
                                   @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long teamId = ((Number) body.get("teamId")).longValue();
-        matchRegistrationService.registerTeam(matchId, teamId);
+        matchRegistrationService.registerTeam(matchId, request.getTeamId());
         return Result.success();
     }
 
@@ -133,11 +132,8 @@ public class MatchController {
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     public Result<?> inviteTeams(@Parameter(description = "比赛ID", example = "1") @PathVariable Long matchId,
-                                 @Parameter(description = "邀请信息") @RequestBody Map<String, Object> body) {
-        @SuppressWarnings("unchecked")
-        List<Number> teamIds = (List<Number>) body.get("teamIds");
-        List<Long> ids = teamIds.stream().map(Number::longValue).toList();
-        matchRegistrationService.inviteTeams(matchId, ids);
+                                 @Parameter(description = "队伍ID列表") @RequestBody List<Long> teamIds) {
+        matchRegistrationService.inviteTeams(matchId, teamIds);
         return Result.success();
     }
 
@@ -162,10 +158,8 @@ public class MatchController {
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     public Result<?> respondToRegistration(@Parameter(description = "报名ID", example = "1") @PathVariable Long registrationId,
-                                           @Parameter(description = "响应信息") @RequestBody Map<String, Object> body) {
-        Object acceptObj = body.get("accept");
-        boolean accept = acceptObj instanceof Boolean ? (Boolean) acceptObj : Boolean.parseBoolean(String.valueOf(acceptObj));
-        matchRegistrationService.respondToRegistration(registrationId, accept);
+                                           @Valid @RequestBody @Parameter(description = "响应信息") RegistrationResponseRequest request) {
+        matchRegistrationService.respondToRegistration(registrationId, request.getAccept());
         return Result.success();
     }
 
@@ -180,9 +174,9 @@ public class MatchController {
     public Result<List<Match>> getSchedule(
             @Parameter(description = "开始时间，格式 yyyy-MM-dd HH:mm:ss") @RequestParam String start,
             @Parameter(description = "结束时间，格式 yyyy-MM-dd HH:mm:ss") @RequestParam String end) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime startDate = LocalDateTime.parse(start, formatter);
-        LocalDateTime endDate = LocalDateTime.parse(end, formatter);
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        java.time.LocalDateTime startDate = java.time.LocalDateTime.parse(start, formatter);
+        java.time.LocalDateTime endDate = java.time.LocalDateTime.parse(end, formatter);
         return Result.success(matchService.getScheduleByDateRange(startDate, endDate));
     }
 
@@ -209,28 +203,13 @@ public class MatchController {
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     public Result<?> generateSchedule(@Parameter(description = "比赛ID", example = "1") @PathVariable Long matchId,
-                                      @Parameter(description = "赛程生成信息") @RequestBody Map<String, Object> body) {
-        @SuppressWarnings("unchecked")
-        List<Number> teamIdNums = (List<Number>) body.get("teamIds");
-        List<Long> teamIds = teamIdNums.stream().map(Number::longValue).toList();
-        String startDateStr = (String) body.get("startDate");
-        int intervalDays = body.get("intervalDays") != null ? ((Number) body.get("intervalDays")).intValue() : 7;
-
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime startDate = LocalDateTime.parse(startDateStr, formatter);
-
-        String matchType = (String) body.get("matchType");
+                                      @Valid @RequestBody @Parameter(description = "赛程生成信息") ScheduleGenerateRequest request) {
         List<Match> generated;
-        if ("cup".equals(matchType)) {
-            @SuppressWarnings("unchecked")
-            Map<String, List<Number>> groupMapNums = (Map<String, List<Number>>) body.get("groupTeams");
-            Map<String, List<Long>> groupTeams = new HashMap<>();
-            groupMapNums.forEach((k, v) -> groupTeams.put(k, v.stream().map(Number::longValue).toList()));
-            generated = matchService.generateCupGroupSchedule(matchId, groupTeams, startDate, intervalDays);
+        if ("cup".equals(request.getMatchType())) {
+            generated = matchService.generateCupGroupSchedule(matchId, request.getGroupTeams(), request.getStartDate(), request.getIntervalDays());
         } else {
-            generated = matchService.generateLeagueSchedule(matchId, teamIds, startDate, intervalDays);
+            generated = matchService.generateLeagueSchedule(matchId, request.getTeamIds(), request.getStartDate(), request.getIntervalDays());
         }
-
         return Result.success(generated.size());
     }
 }

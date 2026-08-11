@@ -1,7 +1,14 @@
 <template>
-  <div class="match-schedule">
+  <div class="page-shell">
+    <!-- 页面头部 -->
     <div class="page-header">
-      <h2>比赛日程</h2>
+      <div class="header-left">
+        <div class="header-icon schedule">📅</div>
+        <div>
+          <h1 class="header-title">比赛日程</h1>
+          <p class="header-desc">查看和管理赛事日程安排</p>
+        </div>
+      </div>
       <div class="header-actions">
         <el-date-picker
           v-model="dateRange"
@@ -9,87 +16,93 @@
           range-separator="至"
           start-placeholder="开始日期"
           end-placeholder="结束日期"
+          size="default"
           @change="fetchSchedule"
+          class="date-picker"
         />
       </div>
     </div>
 
-    <div v-loading="loading">
-      <el-empty v-if="matches.length === 0" description="该时间段没有比赛" />
+    <!-- 赛程时间线 -->
+    <div v-loading="loading" class="schedule-timeline">
+      <el-empty v-if="!loading && matches.length === 0" description="该时间段没有比赛" :image-size="80" />
 
-      <div v-else class="schedule-timeline">
-        <div v-for="(group, date) in groupedMatches" :key="date" class="date-group">
-          <div class="date-header">
-            <el-icon><Calendar /></el-icon>
-            <span>{{ formatDate(date) }}</span>
-            <el-tag size="small">{{ group.length }}场比赛</el-tag>
+      <div v-for="(group, date) in groupedMatches" :key="date" class="date-group">
+        <!-- 日期标题 -->
+        <div class="date-header">
+          <div class="date-icon">📅</div>
+          <div>
+            <div class="date-text">{{ formatDate(date) }}</div>
+            <div class="date-count">{{ group.length }} 场比赛</div>
           </div>
+        </div>
 
-          <div v-for="match in group" :key="match.id" class="match-card">
-            <div class="match-time">{{ formatTime(match.matchDate) }}</div>
-            <div class="match-content" @click="$router.push(`/matches/${match.id}`)">
-              <div class="team home">
-                <span class="team-name">{{ match.homeTeamName || '待定' }}</span>
-              </div>
-              <div class="score">
-                <template v-if="match.status === 1 || match.status === 2">
-                  <span class="score-num">{{ match.homeScore }}</span>
-                  <span class="score-sep">-</span>
-                  <span class="score-num">{{ match.awayScore }}</span>
-                </template>
-                <template v-else>
-                  <span class="vs">VS</span>
-                </template>
-              </div>
-              <div class="team away">
-                <span class="team-name">{{ match.awayTeamName || '待定' }}</span>
-              </div>
+        <!-- 比赛卡片 -->
+        <div v-for="match in group" :key="match.id" class="match-card" @click="$router.push(`/matches/${match.id}`)">
+          <div class="match-card-time">{{ formatTime(match.matchDate) }}</div>
+          <div class="match-card-body">
+            <div class="team home">
+              <div class="team-badge">{{ (match.homeTeamName || '?').charAt(0) }}</div>
+              <span class="team-name">{{ match.homeTeamName || '待定' }}</span>
             </div>
-            <div class="match-meta">
-              <el-tag :type="match.matchType === 'cup' ? 'danger' : 'success'" size="small">
-                {{ match.matchType === 'cup' ? '杯赛' : '联赛' }}
-              </el-tag>
-              <el-tag :type="getStatusType(match.status)" size="small">{{ getStatusText(match.status) }}</el-tag>
-              <span class="venue">{{ match.venue }}</span>
-              <div class="quick-actions" v-if="userStore.hasPermission('match:edit')">
-                <el-button v-if="match.status === 0" type="success" size="small" @click.stop="startMatch(match)">开始</el-button>
-                <el-button v-if="match.status === 1" type="primary" size="small" @click.stop="openScoreDialog(match)">录入比分</el-button>
-                <el-button v-if="match.status === 2" type="info" size="small" @click.stop="viewMatch(match)">查看</el-button>
-              </div>
+            <div class="match-vs">
+              <template v-if="match.status === 1 || match.status === 2">
+                <span class="score">{{ match.homeScore }}</span>
+                <span class="sep">-</span>
+                <span class="score">{{ match.awayScore }}</span>
+              </template>
+              <template v-else>
+                <span class="vs-badge">VS</span>
+              </template>
+            </div>
+            <div class="team away">
+              <span class="team-name">{{ match.awayTeamName || '待定' }}</span>
+              <div class="team-badge">{{ (match.awayTeamName || '?').charAt(0) }}</div>
+            </div>
+          </div>
+          <div class="match-card-footer">
+            <el-tag :type="match.matchType === 'cup' ? 'danger' : 'success'" size="small" class="type-tag">
+              {{ match.matchType === 'cup' ? '杯赛' : '联赛' }}
+            </el-tag>
+            <el-tag :type="getStatusType(match.status)" size="small" class="status-tag">
+              {{ getStatusText(match.status) }}
+            </el-tag>
+            <span class="venue">🏟️ {{ match.venue || '-' }}</span>
+            <div class="quick-actions" @click.stop>
+              <el-button v-if="match.status === 0 && userStore.hasPermission('match:edit')" type="success" size="small" round @click="startMatch(match)">开始</el-button>
+              <el-button v-if="match.status === 1 && userStore.hasPermission('match:edit')" type="primary" size="small" round @click="openScoreDialog(match)">比分</el-button>
+              <el-button v-if="match.status === 2" type="info" size="small" round @click="$router.push(`/matches/${match.id}`)">查看</el-button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <el-dialog v-model="scoreDialogVisible" title="录入比分" width="400px">
-      <div v-if="currentMatch" class="score-dialog">
-        <div class="match-teams">
-          <span class="team-name">{{ currentMatch.homeTeamName }}</span>
-          <span class="vs">VS</span>
-          <span class="team-name">{{ currentMatch.awayTeamName }}</span>
-        </div>
-
-        <el-form label-width="60px" style="margin-top: 20px;">
-          <el-divider content-position="left">全场比分</el-divider>
-          <div class="score-inputs">
-            <el-input-number v-model="scoreForm.homeScore" :min="0" :max="99" />
-            <span class="score-sep">:</span>
-            <el-input-number v-model="scoreForm.awayScore" :min="0" :max="99" />
-          </div>
-
-          <el-divider content-position="left">半场比分</el-divider>
-          <div class="score-inputs">
-            <el-input-number v-model="scoreForm.homeScoreHalf" :min="0" :max="99" />
-            <span class="score-sep">:</span>
-            <el-input-number v-model="scoreForm.awayScoreHalf" :min="0" :max="99" />
-          </div>
-        </el-form>
+    <!-- 比分弹窗 -->
+    <el-dialog v-model="scoreDialogVisible" title="录入比分" width="420px" class="score-dialog">
+      <div v-if="currentMatch" class="score-dialog-teams">
+        <span class="team-name">{{ currentMatch.homeTeamName }}</span>
+        <span class="vs-text">VS</span>
+        <span class="team-name">{{ currentMatch.awayTeamName }}</span>
       </div>
+      <el-form label-width="70px" style="margin-top: 20px;">
+        <el-divider content-position="left">全场比分</el-divider>
+        <div class="score-inputs">
+          <el-input-number v-model="scoreForm.homeScore" :min="0" :max="99" class="score-input" />
+          <span class="score-sep">:</span>
+          <el-input-number v-model="scoreForm.awayScore" :min="0" :max="99" class="score-input" />
+        </div>
+        <el-divider content-position="left">半场比分</el-divider>
+        <div class="score-inputs">
+          <el-input-number v-model="scoreForm.homeScoreHalf" :min="0" :max="99" class="score-input" />
+          <span class="score-sep">:</span>
+          <el-input-number v-model="scoreForm.awayScoreHalf" :min="0" :max="99" class="score-input" />
+        </div>
+      </el-form>
       <template #footer>
         <el-button @click="scoreDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingScore" @click="saveScore">保存</el-button>
         <el-button type="warning" @click="endMatch">结束比赛</el-button>
+        <el-button type="primary" :loading="savingScore" @click="saveScore">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -97,7 +110,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Calendar } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
@@ -110,12 +122,7 @@ const scoreDialogVisible = ref(false)
 const savingScore = ref(false)
 const currentMatch = ref(null)
 
-const scoreForm = ref({
-  homeScore: 0,
-  awayScore: 0,
-  homeScoreHalf: 0,
-  awayScoreHalf: 0
-})
+const scoreForm = ref({ homeScore: 0, awayScore: 0, homeScoreHalf: 0, awayScoreHalf: 0 })
 
 const groupedMatches = computed(() => {
   const groups = {}
@@ -198,10 +205,6 @@ async function endMatch() {
   fetchSchedule()
 }
 
-function viewMatch(match) {
-  window.open(`/matches/${match.id}`, '_blank')
-}
-
 function formatDateStr(date) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -211,9 +214,9 @@ function formatDateStr(date) {
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
-  const d = new Date(dateStr)
+  const d = new Date(dateStr + 'T00:00:00')
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  return `${dateStr} ${weekdays[d.getDay()]}`
+  return `${d.getMonth()+1}月${d.getDate()}日 ${weekdays[d.getDay()]}`
 }
 
 function formatTime(dateStr) {
@@ -221,160 +224,111 @@ function formatTime(dateStr) {
   return dateStr.split(' ')[1] || ''
 }
 
-function getStatusType(status) {
-  const types = { 0: 'info', 1: 'success', 2: 'warning' }
-  return types[status] || 'info'
-}
-
-function getStatusText(status) {
-  const texts = { 0: '未开始', 1: '进行中', 2: '已结束' }
-  return texts[status] || '未知'
-}
+function getStatusType(s) { return { 0: 'info', 1: 'success', 2: 'warning' }[s] || 'info' }
+function getStatusText(s) { return { 0: '未开始', 1: '进行中', 2: '已结束' }[s] || '未知' }
 
 onMounted(fetchSchedule)
 </script>
 
 <style scoped>
-.match-schedule {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-}
+.page-shell { max-width: 900px; margin: 0 auto; }
 
 .page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
 }
+.header-left { display: flex; align-items: center; gap: 14px; }
+.header-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, #409eff, #1d4ed8);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; box-shadow: 0 4px 12px rgba(64,158,255,0.3);
+}
+.header-title { font-size: 21px; font-weight: 700; color: #1a202c; margin-bottom: 2px; }
+.header-desc { font-size: 13px; color: #718096; }
+.header-actions { display: flex; gap: 10px; }
+.date-picker { border-radius: 10px; }
 
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
+/* ── 赛程时间线 ── */
+.schedule-timeline { display: flex; flex-direction: column; gap: 24px; }
 
-.date-group {
-  margin-bottom: 24px;
-}
+.date-group { }
 
 .date-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 2px solid #409eff;
-  margin-bottom: 12px;
-  font-size: 16px;
-  font-weight: 500;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 14px;
 }
+.date-icon { font-size: 20px; }
+.date-text { font-size: 16px; font-weight: 700; color: #1a202c; }
+.date-count { font-size: 12px; color: #a0aec0; }
 
+/* ── 比赛卡片 ── */
 .match-card {
-  padding: 16px;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: all 0.3s;
-}
-
-.match-card:hover {
-  border-color: #409eff;
-  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.1);
-}
-
-.match-time {
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.match-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 20px;
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   cursor: pointer;
 }
-
-.team {
-  flex: 1;
+.match-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  border-color: rgba(64,158,255,0.3);
 }
 
-.team.home {
-  text-align: right;
-  padding-right: 20px;
+.match-card-time { font-size: 13px; color: #a0aec0; margin-bottom: 10px; }
+
+.match-card-body {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+}
+.team { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.team.home { justify-content: flex-end; text-align: right; }
+.team.away { justify-content: flex-start; text-align: left; }
+.team-badge {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #f0f4ff, #dce6ff);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; color: #409eff; flex-shrink: 0;
+}
+.team-name { font-size: 14px; font-weight: 600; color: #1a202c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.match-vs { display: flex; align-items: center; gap: 6px; padding: 0 16px; flex-shrink: 0; }
+.score { font-size: 22px; font-weight: 800; color: #1d4ed8; }
+.sep { font-size: 18px; color: #cbd5e1; }
+.vs-badge {
+  font-size: 14px; font-weight: 700; color: #a0aec0;
+  background: #f7fafc; padding: 4px 12px; border-radius: 6px;
 }
 
-.team.away {
-  text-align: left;
-  padding-left: 20px;
+.match-card-footer {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid #f7fafc;
+  flex-wrap: wrap;
 }
+.type-tag, .status-tag { font-weight: 500; }
+.venue { font-size: 12px; color: #a0aec0; margin-left: 4px; }
+.quick-actions { margin-left: auto; display: flex; gap: 6px; }
 
-.team-name {
-  font-size: 18px;
-  font-weight: 500;
-}
+/* ── 比分弹窗 ── */
+:deep(.score-dialog .el-dialog__header) { padding: 20px 24px 16px; }
+:deep(.score-dialog .el-dialog__body) { padding: 20px 24px; }
+:deep(.score-dialog .el-dialog__footer) { padding: 12px 24px 20px; }
 
-.score {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 100px;
-  justify-content: center;
+.score-dialog-teams {
+  display: flex; align-items: center; justify-content: center;
+  gap: 16px; font-size: 17px; font-weight: 600; color: #1a202c;
 }
-
-.score-num {
-  font-size: 24px;
-  font-weight: bold;
-  color: #409eff;
+.vs-text { color: #a0aec0; font-size: 14px; }
+.score-inputs {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; padding: 8px 0;
 }
-
-.score-sep {
-  font-size: 20px;
-  color: #c0c4cc;
-}
-
-.vs {
-  font-size: 18px;
-  font-weight: bold;
-  color: #c0c4cc;
-}
-
-.match-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.venue {
-  font-size: 13px;
-  color: #909399;
-}
-
-.quick-actions {
-  margin-left: auto;
-}
-
-.score-dialog .match-teams {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.score-dialog .score-inputs {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 12px 0;
-}
-
-.score-dialog .score-sep {
-  font-size: 24px;
-  font-weight: bold;
-  color: #c0c4cc;
-}
+.score-input { width: 100px; }
+.score-sep { font-size: 24px; font-weight: 700; color: #cbd5e1; }
 </style>

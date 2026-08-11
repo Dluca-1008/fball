@@ -146,7 +146,7 @@ async function handleGenerate() {
     const body = {
       matchType: form.matchType,
       teamIds: form.selectedTeams,
-      startDate: formatDateStr(form.startDate),
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : '',
       intervalDays: form.intervalDays
     }
 
@@ -170,12 +170,6 @@ async function handleGenerate() {
   }
 }
 
-function formatDateStr(date) {
-  if (!date) return ''
-  const d = new Date(date)
-  const pad = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
 
 onMounted(fetchTeams)
 </script>

@@ -35,7 +35,7 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
         wrapper.orderByDesc(Match::getMatchDate);
         IPage<Match> matchPage = page(new Page<>(page, size), wrapper);
 
-        matchPage.getRecords().forEach(this::fillMatchInfo);
+        fillMatchInfoBatch(matchPage.getRecords());
 
         return matchPage;
     }
@@ -85,7 +85,7 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
                .le(Match::getMatchDate, end)
                .orderByAsc(Match::getMatchDate);
         List<Match> matches = list(wrapper);
-        matches.forEach(this::fillMatchInfo);
+        fillMatchInfoBatch(matches);
         return matches;
     }
 
@@ -96,7 +96,7 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
                .orderByAsc(Match::getMatchDate)
                .last("LIMIT " + limit);
         List<Match> matches = list(wrapper);
-        matches.forEach(this::fillMatchInfo);
+        fillMatchInfoBatch(matches);
         return matches;
     }
 
@@ -128,12 +128,12 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
                 match.setAwayScoreHalf(0);
                 match.setCreatedAt(LocalDateTime.now());
                 save(match);
-                fillMatchInfo(match);
                 generated.add(match);
             }
             currentDate = currentDate.plusDays(intervalDays);
         }
 
+        fillMatchInfoBatch(generated);
         return generated;
     }
 
@@ -167,13 +167,13 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
                 match.setAwayScoreHalf(0);
                 match.setCreatedAt(LocalDateTime.now());
                 save(match);
-                fillMatchInfo(match);
                 generated.add(match);
 
                 currentDate = currentDate.plusDays(intervalDays);
             }
         }
 
+        fillMatchInfoBatch(generated);
         return generated;
     }
 
@@ -236,6 +236,30 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
             Team awayTeam = teamService.getById(match.getAwayTeamId());
             if (awayTeam != null) {
                 match.setAwayTeamName(awayTeam.getName());
+            }
+        }
+    }
+
+    private void fillMatchInfoBatch(List<Match> matches) {
+        if (matches == null || matches.isEmpty()) return;
+        Set<Long> teamIds = new HashSet<>();
+        for (Match match : matches) {
+            if (match.getHomeTeamId() != null) teamIds.add(match.getHomeTeamId());
+            if (match.getAwayTeamId() != null) teamIds.add(match.getAwayTeamId());
+        }
+        List<Team> teams = teamService.listByIds(teamIds);
+        Map<Long, Team> teamMap = new HashMap<>();
+        for (Team team : teams) {
+            teamMap.put(team.getId(), team);
+        }
+        for (Match match : matches) {
+            if (match.getHomeTeamId() != null) {
+                Team homeTeam = teamMap.get(match.getHomeTeamId());
+                if (homeTeam != null) match.setHomeTeamName(homeTeam.getName());
+            }
+            if (match.getAwayTeamId() != null) {
+                Team awayTeam = teamMap.get(match.getAwayTeamId());
+                if (awayTeam != null) match.setAwayTeamName(awayTeam.getName());
             }
         }
     }

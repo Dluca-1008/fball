@@ -42,4 +42,9 @@ public interface OrderService extends IService<Order> {
      * @param userId 用户ID
      */
     void payOrder(Long id, Long userId);
+
+    /**
+     * 取消过期订单（未支付超过30分钟的订单），恢复商品库存。
+     */
+    void cancelExpiredOrders();
 }

@@ -34,8 +34,9 @@ public class ChatController {
     })
     @GetMapping("/list")
     public Result<List<Map<String, Object>>> getChatList(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return Result.success(chatService.getChatList(userDetails.getId()));
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "50") int limit) {
+        return Result.success(chatService.getChatList(userDetails.getId(), limit));
     }
 
     @Operation(summary = "获取聊天历史", description = "分页获取与指定用户的聊天记录")

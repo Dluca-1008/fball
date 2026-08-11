@@ -9,6 +9,7 @@ import com.football.community.repository.MatchMapper;
 import com.football.community.service.MatchStatsService;
 import com.football.community.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,9 @@ public class MatchStatsServiceImpl implements MatchStatsService {
 
     @Autowired
     private TeamService teamService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Override
     public Map<String, Object> getLeagueStats(Long matchId) {
@@ -118,62 +122,66 @@ public class MatchStatsServiceImpl implements MatchStatsService {
     public Map<String, Object> getOverallStats() {
         Map<String, Object> stats = new HashMap<>();
 
-        LambdaQueryWrapper<Match> allWrapper = new LambdaQueryWrapper<>();
-        List<Match> allMatches = matchMapper.selectList(allWrapper);
+        Long totalMatches = matchMapper.selectCount(new LambdaQueryWrapper<>());
+        Long completedMatches = matchMapper.selectCount(
+                new LambdaQueryWrapper<Match>().eq(Match::getStatus, 2));
+        Long inProgressMatches = matchMapper.selectCount(
+                new LambdaQueryWrapper<Match>().eq(Match::getStatus, 1));
+        Long pendingMatches = matchMapper.selectCount(
+                new LambdaQueryWrapper<Match>().eq(Match::getStatus, 0));
 
-        stats.put("totalMatches", allMatches.size());
-        stats.put("completedMatches", allMatches.stream().filter(m -> m.getStatus() == 2).count());
-        stats.put("inProgressMatches", allMatches.stream().filter(m -> m.getStatus() == 1).count());
-        stats.put("pendingMatches", allMatches.stream().filter(m -> m.getStatus() == 0).count());
+        stats.put("totalMatches", totalMatches);
+        stats.put("completedMatches", completedMatches);
+        stats.put("inProgressMatches", inProgressMatches);
+        stats.put("pendingMatches", pendingMatches);
 
-        int totalGoals = allMatches.stream()
-                .filter(m -> m.getStatus() == 2)
-                .mapToInt(m -> (m.getHomeScore() != null ? m.getHomeScore() : 0) + (m.getAwayScore() != null ? m.getAwayScore() : 0))
-                .sum();
-        long completedCount = allMatches.stream().filter(m -> m.getStatus() == 2).count();
-        stats.put("totalGoals", totalGoals);
-        stats.put("avgGoalsPerMatch", completedCount > 0 ? Math.round((double) totalGoals / completedCount * 100.0) / 100.0 : 0);
+        Integer totalGoals = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(SUM(home_score + away_score), 0) FROM matches WHERE status = 2",
+                Integer.class);
+        long completedCount = completedMatches != null ? completedMatches : 0;
+        int totalGoalsVal = totalGoals != null ? totalGoals : 0;
+        stats.put("totalGoals", totalGoalsVal);
+        stats.put("avgGoalsPerMatch", completedCount > 0 ? Math.round((double) totalGoalsVal / completedCount * 100.0) / 100.0 : 0);
 
-        stats.put("leagueMatches", allMatches.stream().filter(m -> "league".equals(m.getMatchType())).count());
-        stats.put("cupMatches", allMatches.stream().filter(m -> "cup".equals(m.getMatchType())).count());
+        Long leagueMatches = matchMapper.selectCount(
+                new LambdaQueryWrapper<Match>().eq(Match::getMatchType, "league"));
+        Long cupMatches = matchMapper.selectCount(
+                new LambdaQueryWrapper<Match>().eq(Match::getMatchType, "cup"));
+        stats.put("leagueMatches", leagueMatches);
+        stats.put("cupMatches", cupMatches);
 
-        Set<Long> teamIds = new HashSet<>();
-        allMatches.forEach(m -> {
-            if (m.getHomeTeamId() != null) teamIds.add(m.getHomeTeamId());
-            if (m.getAwayTeamId() != null) teamIds.add(m.getAwayTeamId());
-        });
-        stats.put("totalTeams", teamIds.size());
+        Integer totalTeams = jdbcTemplate.queryForObject(
+                "SELECT COUNT(DISTINCT team_id) FROM (" +
+                "  SELECT home_team_id AS team_id FROM matches WHERE home_team_id IS NOT NULL" +
+                "  UNION" +
+                "  SELECT away_team_id AS team_id FROM matches WHERE away_team_id IS NOT NULL" +
+                ") t",
+                Integer.class);
+        stats.put("totalTeams", totalTeams != null ? totalTeams : 0);
 
         return stats;
     }
 
     @Override
     public List<Map<String, Object>> getTopScorers(int limit) {
-        LambdaQueryWrapper<Match> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Match::getStatus, 2);
-        List<Match> completedMatches = matchMapper.selectList(wrapper);
+        String sql = "SELECT team_id, SUM(goals) AS total_goals FROM (" +
+                "  SELECT home_team_id AS team_id, home_score AS goals FROM matches WHERE status = 2 AND home_score IS NOT NULL" +
+                "  UNION ALL" +
+                "  SELECT away_team_id AS team_id, away_score AS goals FROM matches WHERE status = 2 AND away_score IS NOT NULL" +
+                ") t GROUP BY team_id ORDER BY total_goals DESC LIMIT ?";
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, limit);
 
-        Map<Long, Integer> teamGoals = new HashMap<>();
-        for (Match match : completedMatches) {
-            if (match.getHomeScore() != null) {
-                teamGoals.merge(match.getHomeTeamId(), match.getHomeScore(), Integer::sum);
-            }
-            if (match.getAwayScore() != null) {
-                teamGoals.merge(match.getAwayTeamId(), match.getAwayScore(), Integer::sum);
-            }
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            Long teamId = ((Number) row.get("team_id")).longValue();
+            int goals = ((Number) row.get("total_goals")).intValue();
+            Team team = teamService.getById(teamId);
+            Map<String, Object> item = new HashMap<>();
+            item.put("teamId", teamId);
+            item.put("teamName", team != null ? team.getName() : "Unknown");
+            item.put("goals", goals);
+            result.add(item);
         }
-
-        return teamGoals.entrySet().stream()
-                .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
-                .limit(limit)
-                .map(entry -> {
-                    Map<String, Object> item = new HashMap<>();
-                    Team team = teamService.getById(entry.getKey());
-                    item.put("teamId", entry.getKey());
-                    item.put("teamName", team != null ? team.getName() : "Unknown");
-                    item.put("goals", entry.getValue());
-                    return item;
-                })
-                .toList();
+        return result;
     }
 }
