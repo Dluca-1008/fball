@@ -317,6 +317,8 @@ async function handleLogin() {
 .input-icon {
   position: absolute;
   left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 2;
   color: #64748b;
   font-size: 18px;
@@ -327,22 +329,20 @@ async function handleLogin() {
 }
 :deep(.el-input__wrapper) {
   padding-left: 44px !important;
-  background: rgba(255, 255, 255, 0.07) !important;
+  background: transparent !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 12px !important;
   box-shadow: none !important;
   transition: all 0.25s;
   width: 100%;
 }
-
 :deep(.el-input__wrapper:hover) {
   border-color: rgba(64, 158, 255, 0.5) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
 }
-
 :deep(.el-input__wrapper.is-focus) {
   border-color: #409eff !important;
-  background: rgba(64, 158, 255, 0.1) !important;
+  background: transparent !important;
   box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.15) !important;
 }
 
