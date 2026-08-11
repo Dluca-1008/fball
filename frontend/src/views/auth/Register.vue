@@ -350,11 +350,12 @@ async function handleRegister() {
 :deep(.el-input__wrapper:hover) {
   border-color: rgba(124, 58, 237, 0.5) !important;
   background: transparent !important;
+  box-shadow: none !important;
 }
 :deep(.el-input__wrapper.is-focus) {
   border-color: #7c3aed !important;
   background: transparent !important;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+  box-shadow: none !important;
 }
 :deep(.el-input__inner) { color: #fff !important; }
 :deep(.el-input__inner::placeholder) { color: #64748b !important; }

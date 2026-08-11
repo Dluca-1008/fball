@@ -339,11 +339,12 @@ async function handleLogin() {
 :deep(.el-input__wrapper:hover) {
   border-color: rgba(64, 158, 255, 0.5) !important;
   background: transparent !important;
+  box-shadow: none !important;
 }
 :deep(.el-input__wrapper.is-focus) {
   border-color: #409eff !important;
   background: transparent !important;
-  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.15) !important;
+  box-shadow: none !important;
 }
 
 :deep(.el-input__inner) {
