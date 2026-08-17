@@ -11,7 +11,7 @@
       <div class="header-actions">
         <el-input v-model="keyword" placeholder="搜索教练" clearable style="width:200px" @clear="fetchCoaches" @keyup.enter="fetchCoaches" />
         <el-button @click="fetchCoaches">搜索</el-button>
-        <el-button type="success" class="btn-create" @click="$router.push('/coaches/create')">
+        <el-button type="success" class="btn-create" @click="$router.push('/app/coaches/create')">
           <el-icon><Plus /></el-icon> 添加教练
         </el-button>
       </div>
@@ -40,7 +40,7 @@
       </el-table-column>
       <el-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">
-          <el-button type="primary" link @click="$router.push(`/coaches/${row.id}/manage`)">管理</el-button>
+          <el-button type="primary" link @click="$router.push(`/app/coaches/${row.id}/manage`)">管理</el-button>
         </template>
       </el-table-column>
     </el-table>

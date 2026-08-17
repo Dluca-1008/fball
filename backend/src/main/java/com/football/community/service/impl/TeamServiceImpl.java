@@ -158,4 +158,9 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
         team.setStatus(0);
         updateById(team);
     }
+
+    @Override
+    public Long getUserTeamId(Long userId) {
+        return teamMemberMapper.getTeamIdByUserId(userId);
+    }
 }

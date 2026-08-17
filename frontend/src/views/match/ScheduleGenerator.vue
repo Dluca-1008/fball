@@ -57,8 +57,8 @@
     <el-card v-if="generatedCount > 0" style="margin-top: 20px;">
       <el-result icon="success" title="赛程生成成功" :sub-title="`共生成 ${generatedCount} 场比赛`">
         <template #extra>
-          <el-button type="primary" @click="$router.push('/matches/schedule')">查看日程</el-button>
-          <el-button @click="$router.push('/matches')">返回赛事列表</el-button>
+          <el-button type="primary" @click="$router.push('/app/matches/schedule')">查看日程</el-button>
+          <el-button @click="$router.push('/app/matches')">返回赛事列表</el-button>
         </template>
       </el-result>
     </el-card>
@@ -67,15 +67,19 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
 const router = useRouter()
+const route = useRoute()
 const formRef = ref(null)
 const generating = ref(false)
 const teams = ref([])
 const generatedCount = ref(0)
+
+// 从路由 query 或 hash 中获取 matchId
+const matchId = ref(route.query.matchId || route.hash.replace('#', '') || null)
 
 const form = reactive({
   matchType: 'league',
@@ -160,7 +164,7 @@ async function handleGenerate() {
       body.groupTeams = groupTeams
     }
 
-    const res = await request.post('/api/matches/1/generate-schedule', body)
+    const res = await request.post(`/api/matches/${matchId.value}/generate-schedule`, body)
     generatedCount.value = res.data
     ElMessage.success(`成功生成 ${res.data} 场比赛`)
   } catch (e) {

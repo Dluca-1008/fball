@@ -48,4 +48,11 @@ public interface PlayerService extends IService<Player> {
      * @param id 球员ID
      */
     void deletePlayer(Long id);
+
+    /**
+     * 检查用户是否已注册为球员
+     * @param userId 用户ID
+     * @return 是否已注册
+     */
+    boolean isPlayerRegistered(Long userId);
 }

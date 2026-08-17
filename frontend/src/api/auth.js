@@ -37,3 +37,11 @@ export function changePassword(data) {
     data
   })
 }
+
+export function updateUserInfo(data) {
+  return request({
+    url: '/api/auth/info',
+    method: 'post',
+    data
+  })
+}

@@ -69,7 +69,7 @@ async function handleSubmit() {
   try {
     await request.post('/api/coaches', form)
     ElMessage.success('教练添加成功')
-    router.push('/coaches')
+    router.push('/app/coaches')
   } finally {
     loading.value = false
   }

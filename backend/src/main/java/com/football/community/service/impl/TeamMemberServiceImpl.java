@@ -41,7 +41,13 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
     private TeamApplicationMapper teamApplicationMapper;
 
     @Autowired
+    private com.football.community.service.PlayerService playerService;
+
+    @Autowired
     private PlayerMapper playerMapper;
+
+    @Autowired
+    private com.football.community.repository.UserMapper userMapper;
 
     @Autowired
     private CoachMapper coachMapper;
@@ -56,6 +62,13 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
         return members.stream().map(m -> {
             Map<String, Object> map = new HashMap<>();
             map.put("userId", m.getUserId());
+            map.put("username", m.getUserId()); // fallback
+            // 查询用户名
+            com.football.community.entity.User user = userMapper.selectById(m.getUserId());
+            if (user != null) {
+                map.put("username", user.getUsername());
+                map.put("nickname", user.getNickname());
+            }
             map.put("role", m.getRole());
             map.put("memberType", m.getMemberType());
             map.put("status", m.getStatus());
@@ -139,6 +152,10 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
     @Transactional
     public void applyToJoin(Long teamId, Long userId, String reason, String memberType, Map<String, Object> memberInfo) {
         boolean isMember = teamService.isTeamMember(teamId, userId);
+        // 检查用户是否已注册为球员
+        if (!playerService.isPlayerRegistered(userId)) {
+            throw new BusinessException("您尚未注册为球员，请先在球员管理页面注册");
+        }
         if (isMember) {
             throw new BusinessException("您已是该球队成员");
         }
@@ -166,6 +183,10 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
     @Transactional
     public String inviteMember(Long teamId, Long userId, Long inviterId) {
         boolean isMember = teamService.isTeamMember(teamId, userId);
+        // 检查用户是否已注册为球员
+        if (!playerService.isPlayerRegistered(userId)) {
+            throw new BusinessException("您尚未注册为球员，请先在球员管理页面注册");
+        }
         if (isMember) {
             throw new BusinessException("该用户已是球队成员");
         }

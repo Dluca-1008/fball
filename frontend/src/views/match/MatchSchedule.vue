@@ -38,7 +38,7 @@
         </div>
 
         <!-- 比赛卡片 -->
-        <div v-for="match in group" :key="match.id" class="match-card" @click="$router.push(`/matches/${match.id}`)">
+        <div v-for="match in group" :key="match.id" class="match-card" @click="$router.push(`/app/matches/${match.id}`)">
           <div class="match-card-time">{{ formatTime(match.matchDate) }}</div>
           <div class="match-card-body">
             <div class="team home">
@@ -47,9 +47,9 @@
             </div>
             <div class="match-vs">
               <template v-if="match.status === 1 || match.status === 2">
-                <span class="score">{{ match.homeScore }}</span>
+                <span class="score">{{ match.homeScore ?? 0 }}</span>
                 <span class="sep">-</span>
-                <span class="score">{{ match.awayScore }}</span>
+                <span class="score">{{ match.awayScore ?? 0 }}</span>
               </template>
               <template v-else>
                 <span class="vs-badge">VS</span>
@@ -71,7 +71,7 @@
             <div class="quick-actions" @click.stop>
               <el-button v-if="match.status === 0 && userStore.hasPermission('match:edit')" type="success" size="small" round @click="startMatch(match)">开始</el-button>
               <el-button v-if="match.status === 1 && userStore.hasPermission('match:edit')" type="primary" size="small" round @click="openScoreDialog(match)">比分</el-button>
-              <el-button v-if="match.status === 2" type="info" size="small" round @click="$router.push(`/matches/${match.id}`)">查看</el-button>
+              <el-button v-if="match.status === 2" type="info" size="small" round @click="$router.push(`/app/matches/${match.id}`)">查看</el-button>
             </div>
           </div>
         </div>
@@ -127,7 +127,9 @@ const scoreForm = ref({ homeScore: 0, awayScore: 0, homeScoreHalf: 0, awayScoreH
 const groupedMatches = computed(() => {
   const groups = {}
   matches.value.forEach(match => {
-    const date = match.matchDate ? match.matchDate.split(' ')[0] : '未知日期'
+    // 用 ISO 日期安全提取日期部分
+    const dateStr = match.matchDate
+    const date = dateStr ? dateStr.substring(0, 10) : '未知日期'
     if (!groups[date]) groups[date] = []
     groups[date].push(match)
   })
@@ -149,7 +151,9 @@ async function fetchSchedule() {
       end = formatDateStr(monthEnd) + ' 23:59:59'
     }
     const res = await request.get('/api/matches/schedule', { params: { start, end } })
-    matches.value = res.data
+    // 过滤掉赛事容器记录（leagueId=null 且无球队，即 id=39/32 这类），只展示实际比赛
+    // 注意：友谊赛也 leagueId=null，但有 homeTeamId/awayTeamId，不会被误过滤
+    matches.value = (res.data || []).filter(m => m.leagueId != null || (m.homeTeamId != null && m.awayTeamId != null))
   } finally {
     loading.value = false
   }
@@ -214,14 +218,18 @@ function formatDateStr(date) {
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
-  const d = new Date(dateStr + 'T00:00:00')
+  // 直接解析 ISO 字符串，避免重复拼接时间部分导致 NaN
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return ''
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  return `${d.getMonth()+1}月${d.getDate()}日 ${weekdays[d.getDay()]}`
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`
 }
 
 function formatTime(dateStr) {
   if (!dateStr) return ''
-  return dateStr.split(' ')[1] || ''
+  // 兼容 ISO 格式（无空格）和数据库格式（有空格）
+  const parts = dateStr.split(/[ T]/)
+  return parts[1] || parts[0] || ''
 }
 
 function getStatusType(s) { return { 0: 'info', 1: 'success', 2: 'warning' }[s] || 'info' }

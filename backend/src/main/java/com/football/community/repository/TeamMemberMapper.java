@@ -14,4 +14,7 @@ public interface TeamMemberMapper extends BaseMapper<TeamMember> {
 
     @Select("SELECT COUNT(*) > 0 FROM team_members WHERE team_id = #{teamId} AND user_id = #{userId} AND status = 1")
     boolean isTeamMember(@Param("teamId") Long teamId, @Param("userId") Long userId);
+
+    @Select("SELECT team_id FROM team_members WHERE user_id = #{userId} AND status = 1 LIMIT 1")
+    Long getTeamIdByUserId(@Param("userId") Long userId);
 }

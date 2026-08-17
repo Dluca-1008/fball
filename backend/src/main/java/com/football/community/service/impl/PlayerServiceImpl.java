@@ -6,8 +6,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.football.community.entity.Player;
 import com.football.community.entity.Team;
+import com.football.community.entity.User;
 import com.football.community.exception.BusinessException;
 import com.football.community.repository.PlayerMapper;
+import com.football.community.repository.UserMapper;
 import com.football.community.service.PlayerService;
 import com.football.community.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,15 +23,16 @@ public class PlayerServiceImpl extends ServiceImpl<PlayerMapper, Player> impleme
     @Autowired
     private TeamService teamService;
 
+    @Autowired
+    private UserMapper userMapper;
+
     @Override
     public IPage<Player> getPlayersByTeamId(Long teamId, int page, int size) {
         LambdaQueryWrapper<Player> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Player::getTeamId, teamId)
                .orderByAsc(Player::getNumber);
         IPage<Player> playerPage = page(new Page<>(page, size), wrapper);
-
-        playerPage.getRecords().forEach(this::fillTeamName);
-
+        playerPage.getRecords().forEach(this::fillNames);
         return playerPage;
     }
 
@@ -42,9 +45,7 @@ public class PlayerServiceImpl extends ServiceImpl<PlayerMapper, Player> impleme
         }
         wrapper.orderByDesc(Player::getCreatedAt);
         IPage<Player> playerPage = page(new Page<>(page, size), wrapper);
-
-        playerPage.getRecords().forEach(this::fillTeamName);
-
+        playerPage.getRecords().forEach(this::fillNames);
         return playerPage;
     }
 
@@ -52,7 +53,7 @@ public class PlayerServiceImpl extends ServiceImpl<PlayerMapper, Player> impleme
     public Player createPlayer(Player player) {
         player.setCreatedAt(LocalDateTime.now());
         save(player);
-        fillTeamName(player);
+        fillNames(player);
         return player;
     }
 
@@ -72,15 +73,27 @@ public class PlayerServiceImpl extends ServiceImpl<PlayerMapper, Player> impleme
         removeById(id);
     }
 
-    private void fillTeamName(Player player) {
+    @Override
+    public boolean isPlayerRegistered(Long userId) {
+        LambdaQueryWrapper<Player> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Player::getUserId, userId);
+        return count(wrapper) > 0;
+    }
+
+    private void fillNames(Player player) {
+        // 填充球队名称
         if (player.getTeamId() != null) {
             Team team = teamService.getById(player.getTeamId());
             if (team != null) {
-                if (team.getStatus() != null && team.getStatus() == 0) {
-                    player.setTeamName(team.getName() + "（已解散）");
-                } else {
-                    player.setTeamName(team.getName());
-                }
+                player.setTeamName(team.getName());
+            }
+        }
+        // 填充用户名
+        if (player.getUserId() != null) {
+            User user = userMapper.selectById(player.getUserId());
+            if (user != null) {
+                player.setPlayerName(user.getUsername());
+                player.setUserNickname(user.getNickname());
             }
         }
     }

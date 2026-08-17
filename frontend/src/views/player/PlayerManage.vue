@@ -119,7 +119,7 @@ async function handleDelete() {
   await ElMessageBox.confirm('确定删除该球员？此操作不可撤销', '警告', { type: 'warning' })
   await request.delete(`/api/players/${playerId}`)
   ElMessage.success('删除成功')
-  router.push('/players')
+  router.push('/app/players')
 }
 
 onMounted(() => {

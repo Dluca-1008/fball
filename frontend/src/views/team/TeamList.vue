@@ -11,7 +11,7 @@
       <div class="header-actions">
         <el-input v-model="keyword" placeholder="搜索球队" clearable style="width:200px" @clear="fetchTeams" @keyup.enter="fetchTeams" />
         <el-button @click="fetchTeams">搜索</el-button>
-        <el-button type="success" class="btn-create" @click="$router.push('/teams/create')">
+        <el-button type="success" class="btn-create" @click="$router.push('/app/teams/create')">
           <el-icon><Plus /></el-icon> 创建球队
         </el-button>
       </div>
@@ -19,7 +19,7 @@
 
     <div class="team-cards" v-loading="loading">
       <el-empty v-if="!loading && teams.length === 0" description="暂无球队" />
-      <div v-for="team in teams" :key="team.id" class="team-card" @click="$router.push(`/teams/${team.id}`)">
+      <div v-for="team in teams" :key="team.id" class="team-card" @click="$router.push(`/app/teams/${team.id}`)">
         <div class="team-card-header">
           <div class="team-avatar">{{ (team.name || '?').charAt(0) }}</div>
           <div class="team-main-info">

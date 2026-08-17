@@ -32,7 +32,7 @@
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="比分录入" name="score">
+        <el-tab-pane label="比分录入" name="score" v-if="match.homeTeamId">
           <div class="score-section">
             <div class="score-display">
               <div class="team-score">
@@ -48,46 +48,42 @@
             <el-divider />
             <div class="score-actions">
               <el-button type="primary" :loading="savingScore" @click="handleUpdateScore">保存比分</el-button>
-              <el-button type="success" @click="handleStartMatch" :disabled="match.status !== 0">开始比赛</el-button>
+              <el-button type="success" @click="handleStartMatch" :disabled="match.status !== 0 || !match.homeTeamId">开始比赛</el-button>
               <el-button type="warning" @click="handleEndMatch" :disabled="match.status !== 1">结束比赛</el-button>
             </div>
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="球队报名" name="registrations">
-          <div class="section-header">
-            <span>已报名/受邀球队</span>
-            <el-button type="primary" size="small" @click="inviteDialogVisible = true">批量邀请球队</el-button>
-          </div>
-          <el-table :data="registrations" stripe>
-            <el-table-column prop="teamName" label="球队名称" />
-            <el-table-column label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="getRegStatusType(row.status)">{{ getRegStatusText(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createdAt" label="报名时间" />
-          </el-table>
-        </el-tab-pane>
+        <el-tab-pane label="红黄牌" name="cards" v-if="match.homeTeamId">
+          <div class="cards-section">
+            <div class="cards-header">
+              <span>红黄牌记录</span>
+              <el-button type="primary" size="small" @click="cardDialogVisible = true">添加红黄牌</el-button>
+            </div>
 
-        <el-tab-pane v-if="match.matchType === 'league'" label="积分榜" name="standings">
-          <el-button type="primary" size="small" @click="initLeagueStandings" style="margin-bottom: 12px;">生成积分榜</el-button>
-          <div v-for="(teams, groupName) in groupStandings" :key="groupName" style="margin-bottom: 24px;">
-            <h4>{{ groupName }}组</h4>
-            <el-table :data="teams" stripe border size="small">
-              <el-table-column type="index" label="#" width="50" />
-              <el-table-column prop="teamName" label="球队" />
-              <el-table-column prop="played" label="场次" width="70" />
-              <el-table-column prop="won" label="胜" width="60" />
-              <el-table-column prop="drawn" label="平" width="60" />
-              <el-table-column prop="lost" label="负" width="60" />
-              <el-table-column prop="goalsFor" label="进球" width="70" />
-              <el-table-column prop="goalsAgainst" label="失球" width="70" />
-              <el-table-column label="净胜球" width="80">
-                <template #default="{ row }">{{ row.goalsFor - row.goalsAgainst }}</template>
+            <el-table :data="cards" stripe v-loading="cardsLoading">
+              <el-table-column prop="minute" label="时间" width="70" align="center" />
+              <el-table-column label="球队" width="120">
+                <template #default="{ row }">
+                  <span>{{ row.teamName || '球队 #' + row.teamId }}</span>
+                </template>
               </el-table-column>
-              <el-table-column prop="points" label="积分" width="70" />
+              <el-table-column label="球员" width="120">
+                <template #default="{ row }">
+                  <span>{{ row.playerName || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="100" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="row.cardType === 1 ? 'warning' : 'danger'" size="small">
+                    {{ row.cardType === 1 ? '🟨 黄牌' : '🟥 红牌' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="createdAt" label="记录时间" />
             </el-table>
+
+            <el-empty v-if="!cardsLoading && cards.length === 0" description="暂无红黄牌记录" />
           </div>
         </el-tab-pane>
 
@@ -140,25 +136,41 @@
       </el-tabs>
     </el-card>
 
-    <el-dialog v-model="inviteDialogVisible" title="批量邀请球队" width="500px">
-      <el-form label-width="80px">
-        <el-form-item label="选择球队">
-          <el-select v-model="selectedTeamIds" multiple placeholder="请选择要邀请的球队" filterable style="width: 100%;">
+    <!-- 添加红黄牌弹窗 -->
+    <el-dialog v-model="cardDialogVisible" title="添加红黄牌" width="400px">
+      <el-form :model="cardForm" label-width="80px">
+        <el-form-item label="球队">
+          <el-select v-model="cardForm.teamId" placeholder="选择球队" style="width:100%">
             <el-option v-for="t in teams" :key="t.id" :label="t.name" :value="t.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="球员">
+          <el-select v-model="cardForm.playerId" placeholder="选择球员（可选）" filterable style="width:100%">
+            <el-option v-for="p in players" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-radio-group v-model="cardForm.cardType">
+            <el-radio :label="1">🟨 黄牌</el-radio>
+            <el-radio :label="2">🟥 红牌</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="时间">
+          <el-input-number v-model="cardForm.minute" :min="1" :max="120" placeholder="分钟（可选）" />
+        </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="inviteDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="inviting" @click="handleBatchInvite">邀请</el-button>
+        <el-button @click="cardDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="savingCard" @click="handleAddCard">确认</el-button>
       </template>
     </el-dialog>
 
+    <!-- 初始化分组弹窗 -->
     <el-dialog v-model="groupDialogVisible" title="初始化分组" width="600px">
       <el-form label-width="80px">
         <el-form-item v-for="(group, index) in groupForm" :key="index" :label="'第' + (index + 1) + '组'">
           <el-select v-model="groupForm[index].teamIds" multiple placeholder="选择球队" filterable style="width: 100%;">
-            <el-option v-for="t in acceptedTeams" :key="t.id" :label="t.teamName || t.name" :value="t.teamId || t.id" />
+            <el-option v-for="t in teams" :key="t.id" :label="t.name" :value="t.id" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -188,18 +200,20 @@ const activeTab = ref('info')
 const loading = ref(false)
 const saving = ref(false)
 const savingScore = ref(false)
-const inviting = ref(false)
+const savingCard = ref(false)
+const cardsLoading = ref(false)
 const match = ref(null)
 const teams = ref([])
-const registrations = ref([])
+const players = ref([])
 const groupStandings = ref({})
 const knockouts = ref([])
+const cards = ref([])
 const formRef = ref(null)
-const inviteDialogVisible = ref(false)
 const groupDialogVisible = ref(false)
-const selectedTeamIds = ref([])
+const cardDialogVisible = ref(false)
 
 const groupForm = ref([{ teamIds: [] }])
+const cardForm = ref({ teamId: null, playerId: null, cardType: 1, minute: null })
 
 const form = reactive({ matchDate: '', venue: '', status: 0 })
 const scoreForm = reactive({ homeScore: 0, awayScore: 0 })
@@ -207,8 +221,6 @@ const rules = {
   matchDate: [{ required: true, message: '请选择比赛时间', trigger: 'change' }],
   venue: [{ required: true, message: '请输入比赛场地', trigger: 'blur' }]
 }
-
-const acceptedTeams = computed(() => registrations.value.filter(r => r.status === 1))
 
 const knockoutRounds = computed(() => {
   const rounds = {}
@@ -231,36 +243,45 @@ async function fetchMatch() {
 }
 
 async function fetchTeams() {
-  const res = await request.get('/api/teams', { params: { page: 1, size: 200 } })
-  teams.value = res.data.records
+  try {
+    const res = await request.get('/api/teams/list')
+    teams.value = res.data || []
+  } catch { /* ignore */ }
 }
 
-async function fetchRegistrations() {
-  const res = await request.get(`/api/matches/${matchId}/registrations`)
-  registrations.value = res.data
+async function fetchPlayers() {
+  try {
+    const homeId = match.value?.homeTeamId
+    const awayId = match.value?.awayTeamId
+    const teamIds = [homeId, awayId].filter(Boolean)
+    if (teamIds.length === 0) return
+    const res = await request.get('/api/players', { params: { teamIds: teamIds.join(','), page: 1, size: 200 } })
+    players.value = (res.data.records) || []
+  } catch { /* ignore */ }
+}
+
+async function fetchCards() {
+  cardsLoading.value = true
+  try {
+    const res = await request.get(`/api/matches/${matchId}/cards`)
+    cards.value = res.data || []
+  } catch { /* ignore */ } finally {
+    cardsLoading.value = false
+  }
 }
 
 async function fetchGroupStandings() {
   try {
     const res = await request.get(`/api/matches/${matchId}/groups/standings`)
-    groupStandings.value = res.data
+    groupStandings.value = res.data || {}
   } catch (e) { /* ignore */ }
 }
 
 async function fetchKnockouts() {
   try {
     const res = await request.get(`/api/matches/${matchId}/knockouts`)
-    knockouts.value = res.data
+    knockouts.value = res.data || []
   } catch (e) { /* ignore */ }
-}
-
-async function initLeagueStandings() {
-  const accepted = acceptedTeams.value
-  if (accepted.length < 2) { ElMessage.warning('至少需要2支球队'); return }
-  const groupMap = { 'A': accepted.map(t => t.teamId || t.id) }
-  await request.post(`/api/matches/${matchId}/groups/init`, groupMap)
-  ElMessage.success('积分榜已生成')
-  fetchGroupStandings()
 }
 
 async function handleInitGroups() {
@@ -278,9 +299,6 @@ async function handleInitGroups() {
 }
 
 async function initKnockoutFromGroups() {
-  const accepted = acceptedTeams.value
-  if (accepted.length < 2) { ElMessage.warning('至少需要2支球队'); return }
-
   if (Object.keys(groupStandings.value).length > 0) {
     let topTeams = []
     Object.keys(groupStandings.value).forEach(groupName => {
@@ -295,10 +313,8 @@ async function initKnockoutFromGroups() {
     while (topTeams.length < powerOf2) topTeams.push(null)
     await request.post(`/api/matches/${matchId}/knockouts/init`, { teamIds: topTeams })
   } else {
-    const teamIds = accepted.map(t => t.teamId || t.id)
-    const powerOf2 = Math.pow(2, Math.ceil(Math.log2(teamIds.length)))
-    while (teamIds.length < powerOf2) teamIds.push(null)
-    await request.post(`/api/matches/${matchId}/knockouts/init`, { teamIds })
+    ElMessage.warning('请先初始化分组赛')
+    return
   }
   ElMessage.success('淘汰赛对阵已生成')
   fetchKnockouts()
@@ -306,9 +322,11 @@ async function initKnockoutFromGroups() {
 
 async function updateKnockoutScore(knockout) {
   if (knockout.homeScore == null || knockout.awayScore == null) return
-  await request.put(`/api/matches/knockouts/${knockout.id}/score`, {
-    homeScore: knockout.homeScore, awayScore: knockout.awayScore
-  })
+  try {
+    await request.put(`/api/matches/knockouts/${knockout.id}/score`, {
+      homeScore: knockout.homeScore, awayScore: knockout.awayScore
+    })
+  } catch { /* silent - will re-fetch on next tab switch */ }
 }
 
 async function advanceKnockout(knockout) {
@@ -320,7 +338,7 @@ async function advanceKnockout(knockout) {
 async function handleSave() {
   await formRef.value.validate()
   saving.value = true
-  try { await request.put(`/api/matches/${matchId}`, form); ElMessage.success('保存成功'); fetchMatch() }
+  try { await request.put(`/api/matches/${matchId}`, { ...form, name: match.value?.name }); ElMessage.success('保存成功'); fetchMatch() }
   finally { saving.value = false }
 }
 
@@ -334,21 +352,36 @@ async function handleUpdateScore() {
 
 async function handleStartMatch() { await ElMessageBox.confirm('确定开始比赛？'); await request.put(`/api/matches/${matchId}`, { status: 1 }); ElMessage.success('比赛已开始'); fetchMatch() }
 async function handleEndMatch() { await ElMessageBox.confirm('确定结束比赛？'); await request.put(`/api/matches/${matchId}`, { homeScore: scoreForm.homeScore, awayScore: scoreForm.awayScore, status: 2 }); ElMessage.success('比赛已结束'); fetchMatch() }
-async function handleDelete() { await ElMessageBox.confirm('确定删除该比赛？', '警告', { type: 'warning' }); await request.delete(`/api/matches/${matchId}`); ElMessage.success('删除成功'); router.push('/matches') }
+async function handleDelete() { await ElMessageBox.confirm('确定删除该比赛？', '警告', { type: 'warning' }); await request.delete(`/api/matches/${matchId}`); ElMessage.success('删除成功'); router.push('/app/matches') }
 
-async function handleBatchInvite() {
-  if (selectedTeamIds.value.length === 0) { ElMessage.warning('请选择球队'); return }
-  inviting.value = true
-  try { await request.post(`/api/matches/${matchId}/invite`, selectedTeamIds.value); ElMessage.success('邀请成功'); inviteDialogVisible.value = false; selectedTeamIds.value = []; fetchRegistrations() }
-  finally { inviting.value = false }
+async function handleAddCard() {
+  if (!cardForm.value.teamId) { ElMessage.warning('请选择球队'); return }
+  savingCard.value = true
+  try {
+    await request.post(`/api/matches/${matchId}/cards`, {
+      teamId: cardForm.value.teamId,
+      playerId: cardForm.value.playerId,
+      cardType: cardForm.value.cardType,
+      minute: cardForm.value.minute
+    })
+    ElMessage.success('添加成功')
+    cardDialogVisible.value = false
+    cardForm.value = { teamId: null, playerId: null, cardType: 1, minute: null }
+    fetchCards()
+  } finally { savingCard.value = false }
 }
 
 function addGroup() { groupForm.value.push({ teamIds: [] }) }
 function removeGroup() { if (groupForm.value.length > 1) groupForm.value.pop() }
-function getRegStatusType(s) { return { 0: 'warning', 1: 'success', 2: 'danger' }[s] || 'info' }
-function getRegStatusText(s) { return { 0: '待处理', 1: '已接受', 2: '已拒绝' }[s] || '未知' }
 
-onMounted(() => { fetchMatch(); fetchTeams(); fetchRegistrations(); fetchGroupStandings(); fetchKnockouts() })
+onMounted(() => {
+  fetchMatch()
+  fetchTeams()
+  fetchPlayers()
+  fetchCards()
+  fetchGroupStandings()
+  fetchKnockouts()
+})
 </script>
 
 <style scoped>
@@ -361,6 +394,10 @@ onMounted(() => { fetchMatch(); fetchTeams(); fetchRegistrations(); fetchGroupSt
 .team-label { font-size: 14px; color: #606266; font-weight: 500; }
 .score-divider { font-size: 32px; font-weight: bold; color: #c0c4cc; }
 .score-actions { display: flex; gap: 12px; justify-content: center; }
+
+.cards-section { max-width: 800px; }
+.cards-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+
 .bracket-container { display: flex; gap: 40px; overflow-x: auto; padding: 20px 0; }
 .bracket-round { display: flex; flex-direction: column; gap: 20px; min-width: 200px; }
 .round-title { text-align: center; font-weight: bold; color: #409eff; padding: 8px; background: #ecf5ff; border-radius: 4px; }

@@ -12,12 +12,22 @@
         <h1 class="hero-title">欢迎来到足球社区</h1>
         <p class="hero-subtitle">关注球队 · 参与赛事 · 交流互动 · 发现精彩</p>
         <div class="hero-actions">
-          <el-button size="large" class="hero-btn-primary" @click="$router.push('/matches')">
-            <el-icon><Trophy /></el-icon> 查看赛事
-          </el-button>
-          <el-button size="large" class="hero-btn-secondary" @click="$router.push('/posts')">
-            <el-icon><ChatDotRound /></el-icon> 进入社区
-          </el-button>
+          <template v-if="userStore.token">
+            <el-button size="large" class="hero-btn-primary" @click="router.push('/app')">
+              <el-icon><ArrowRight /></el-icon> 进入社区
+            </el-button>
+            <el-button size="large" class="hero-btn-secondary" @click="goTo('/app/matches', '/matches')">
+              <el-icon><Trophy /></el-icon> 查看赛事
+            </el-button>
+          </template>
+          <template v-else>
+            <el-button size="large" class="hero-btn-primary" @click="router.push('/login')">
+              登录 / 注册
+            </el-button>
+            <el-button size="large" class="hero-btn-secondary" @click="router.push('/app/matches')">
+              <el-icon><Trophy /></el-icon> 浏览赛事
+            </el-button>
+          </template>
         </div>
       </div>
     </div>
@@ -30,7 +40,7 @@
       </div>
       <el-row :gutter="20">
         <el-col :span="6">
-          <div class="feature-card" @click="$router.push('/teams')">
+          <div class="feature-card" @click="goTo('/app/teams', '/teams')">
             <div class="feature-icon" style="background: linear-gradient(135deg, #409eff, #1d4ed8);">
               <el-icon size="28"><UserFilled /></el-icon>
             </div>
@@ -40,7 +50,7 @@
           </div>
         </el-col>
         <el-col :span="6">
-          <div class="feature-card" @click="$router.push('/matches')">
+          <div class="feature-card" @click="goTo('/app/matches', '/matches')">
             <div class="feature-icon" style="background: linear-gradient(135deg, #e6a23c, #c45d0e);">
               <el-icon size="28"><Trophy /></el-icon>
             </div>
@@ -50,7 +60,7 @@
           </div>
         </el-col>
         <el-col :span="6">
-          <div class="feature-card" @click="$router.push('/posts')">
+          <div class="feature-card" @click="goTo('/app/posts', '/posts')">
             <div class="feature-icon" style="background: linear-gradient(135deg, #67c23a, #2f891e);">
               <el-icon size="28"><ChatDotRound /></el-icon>
             </div>
@@ -60,7 +70,7 @@
           </div>
         </el-col>
         <el-col :span="6">
-          <div class="feature-card" @click="$router.push('/shop/products')">
+          <div class="feature-card" @click="goTo('/app/shop/products', '/shop/products')">
             <div class="feature-icon" style="background: linear-gradient(135deg, #909399, #555);">
               <el-icon size="28"><ShoppingBag /></el-icon>
             </div>
@@ -73,33 +83,52 @@
     </div>
 
     <!-- 快捷入口 -->
-    <div class="section section-last">
+    <div class="section section-last" v-if="userStore.token">
       <div class="section-header">
         <h2>快捷入口</h2>
       </div>
       <el-row :gutter="16">
         <el-col :span="6" v-for="item in quickItems" :key="item.path">
-          <div class="quick-card" @click="$router.push(item.path)">
+          <div class="quick-card" @click="handleQuickNav(item.path)">
             <span class="quick-icon">{{ item.icon }}</span>
             <span class="quick-label">{{ item.label }}</span>
           </div>
         </el-col>
       </el-row>
     </div>
+    <div class="section section-last" v-else>
+      <div class="login-prompt">
+        <p>登录后解锁全部功能：创建球队、参与赛事、社区互动</p>
+        <el-button type="primary" size="large" @click="router.push('/login')">立即登录</el-button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import {
-  Trophy, ChatDotRound, ShoppingBag, UserFilled
+  Trophy, ChatDotRound, ShoppingBag, UserFilled, ArrowRight
 } from '@element-plus/icons-vue'
 
+const router = useRouter()
+const userStore = useUserStore()
+
+const goTo = (loggedInPath, anonymousPath) => {
+  router.push(userStore.token ? loggedInPath : anonymousPath)
+}
+
+const handleQuickNav = (loggedInPath) => {
+  router.push(userStore.token ? loggedInPath : loggedInPath.replace('/app', ''))
+}
+
 const quickItems = ref([
-  { label: '我的邀请', path: '/my-invitations', icon: '📨' },
-  { label: '消息中心', path: '/chat', icon: '💬' },
-  { label: '商品商城', path: '/shop/products', icon: '🛒' },
-  { label: '赛事日程', path: '/matches/schedule', icon: '📅' },
+  { label: '我的邀请', path: '/app/profile/invitations', icon: '📨' },
+  { label: '消息中心', path: '/app/chat', icon: '💬' },
+  { label: '商品商城', path: '/app/shop/products', icon: '🛒' },
+  { label: '赛事日程', path: '/app/matches/schedule', icon: '📅' },
 ])
 </script>
 

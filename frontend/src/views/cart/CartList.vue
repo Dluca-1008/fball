@@ -15,7 +15,7 @@
 
     <div class="cart-content" v-loading="loading">
       <el-empty v-if="!loading && cartItems.length === 0" description="购物车是空的，去逛逛吧" :image-size="120">
-        <el-button type="primary" @click="$router.push('/shop/products')">去商城</el-button>
+        <el-button type="primary" @click="$router.push('/app/shop/products')">去商城</el-button>
       </el-empty>
 
       <div v-if="cartItems.length > 0" class="cart-items">

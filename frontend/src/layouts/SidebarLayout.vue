@@ -3,7 +3,7 @@
     <!-- 左侧边栏 -->
     <div class="sidebar">
       <!-- Logo -->
-      <div class="sidebar-logo" @click="$router.push('/')">
+      <div class="sidebar-logo" @click="handleLogoClick">
         <div class="logo-orb">⚽</div>
         <span class="logo-text">足球社区</span>
       </div>
@@ -18,7 +18,7 @@
         active-text-color="#ffffff"
       >
         <!-- 首页 -->
-        <el-menu-item index="/">
+        <el-menu-item index="/app">
           <el-icon :class="{ 'is-active': activeMenu === '/' }"><HomeFilled /></el-icon>
           <span>首页</span>
         </el-menu-item>
@@ -29,11 +29,11 @@
             <el-icon><ChatDotRound /></el-icon>
             <span>社区</span>
           </template>
-          <el-menu-item index="/posts">
+          <el-menu-item index="/app/posts">
             <el-icon><Document /></el-icon>
             <span>论坛动态</span>
           </el-menu-item>
-          <el-menu-item index="/chat">
+          <el-menu-item index="/app/chat">
             <el-icon><Message /></el-icon>
             <span>消息中心</span>
           </el-menu-item>
@@ -45,15 +45,15 @@
             <el-icon><ShoppingBag /></el-icon>
             <span>商城</span>
           </template>
-          <el-menu-item index="/shop/products">
+          <el-menu-item index="/app/shop/products">
             <el-icon><Goods /></el-icon>
             <span>商品列表</span>
           </el-menu-item>
-          <el-menu-item index="/shop/orders">
+          <el-menu-item index="/app/shop/orders">
             <el-icon><List /></el-icon>
             <span>我的订单</span>
           </el-menu-item>
-          <el-menu-item index="/cart">
+          <el-menu-item index="/app/cart">
             <el-icon><ShoppingCart /></el-icon>
             <span>购物车</span>
           </el-menu-item>
@@ -65,45 +65,49 @@
             <el-icon><Trophy /></el-icon>
             <span>赛事</span>
           </template>
-          <el-menu-item index="/matches">
+          <el-menu-item index="/app/matches">
             <el-icon><Calendar /></el-icon>
             <span>赛事列表</span>
           </el-menu-item>
-          <el-menu-item index="/teams">
+          <el-menu-item index="/app/teams">
             <el-icon><UserFilled /></el-icon>
             <span>球队管理</span>
           </el-menu-item>
-          <el-menu-item index="/players">
+          <el-menu-item index="/app/players">
             <el-icon><Avatar /></el-icon>
             <span>球员管理</span>
           </el-menu-item>
+          <el-menu-item index="/app/matches/create" v-if="userStore.hasRole('organizer')">
+            <el-icon><Plus /></el-icon>
+            <span>创建赛事</span>
+          </el-menu-item>
+          <el-menu-item index="/app/matches/friendly/sent" v-if="userStore.hasRole('team_admin')">
+            <el-icon><ChatDotRound /></el-icon>
+            <span>友谊赛邀请</span>
+          </el-menu-item>
         </el-sub-menu>
 
-        <!-- 个人中心 -->
-        <el-sub-menu index="profile">
+        <!-- 管理后台 -->
+        <el-sub-menu index="admin" v-if="userStore.hasRole('admin')">
           <template #title>
-            <el-icon><User /></el-icon>
-            <span>个人中心</span>
+            <el-icon><Setting /></el-icon>
+            <span>管理后台</span>
           </template>
-          <el-menu-item index="/my-invitations">
-            <el-icon><Postcard /></el-icon>
-            <span>我的邀请</span>
+          <el-menu-item index="/app/admin/users">
+            <el-icon><UserFilled /></el-icon>
+            <span>用户管理</span>
           </el-menu-item>
-          <el-menu-item index="/chat">
-            <el-icon><Message /></el-icon>
-            <span>消息中心</span>
-          </el-menu-item>
-          <el-menu-item index="/change-password">
-            <el-icon><Lock /></el-icon>
-            <span>修改密码</span>
+          <el-menu-item index="/app/admin/roles">
+            <el-icon><Key /></el-icon>
+            <span>角色管理</span>
           </el-menu-item>
         </el-sub-menu>
+
       </el-menu>
 
       <!-- 用户信息区 -->
       <div class="sidebar-footer" v-if="userStore.token">
-        <div class="sidebar-divider" />
-        <div class="user-card" @click="$router.push('/change-password')">
+        <div class="user-card" @click="$router.push('/app/profile')">
           <el-avatar :size="38" class="user-avatar">
             {{ userStore.userInfo?.nickname?.charAt(0) || userStore.userInfo?.username?.charAt(0) || 'U' }}
           </el-avatar>
@@ -114,7 +118,7 @@
             </div>
           </div>
         </div>
-        <el-button type="danger" link size="small" class="logout-btn" @click="handleLogout">
+        <el-button type="danger" size="small" class="logout-btn" @click="handleLogout">
           <el-icon><SwitchButton /></el-icon> 退出登录
         </el-button>
       </div>
@@ -122,9 +126,9 @@
 
     <!-- 主内容区 -->
     <div class="main-area">
-      <router-view v-slot="{ Component }">
-        <transition name="fade-slide" mode="out-in">
-          <component :is="Component" />
+      <router-view v-slot="{ Component, route: r }">
+        <transition name="page-fade" mode="out-in">
+          <component :is="Component" :key="r.fullPath" />
         </transition>
       </router-view>
     </div>
@@ -138,18 +142,56 @@ import { useUserStore } from '@/stores/user'
 import {
   HomeFilled, ChatDotRound, ShoppingBag, Trophy, User,
   Document, Message, Goods, List, ShoppingCart,
-  Calendar, UserFilled, Avatar, Postcard, Lock, SwitchButton
+  Calendar, UserFilled, Avatar, SwitchButton,
+  Setting, Key, Plus
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const activeMenu = computed(() => route.path)
+const activeMenu = computed(() => resolveActiveMenu(route.path))
+
+function handleLogoClick() {
+  router.push(userStore.token ? '/app' : '/')
+}
 
 function handleLogout() {
   userStore.logout()
   router.push('/login')
+}
+
+const table = [
+  { index: '/app',        match: '/app' },
+  { index: '/app/posts', match: '/app/posts' },
+  { index: '/app/chat',  match: '/app/chat' },
+  { index: '/app/shop/products', match: '/app/shop/products' },
+  { index: '/app/shop/orders',   match: '/app/shop/orders' },
+  { index: '/app/cart',  match: '/app/cart' },
+  { index: '/app/matches', match: '/app/matches' },
+  { index: '/app/teams', match: '/app/teams' },
+  { index: '/app/players', match: '/app/players' },
+  { index: '/app/coaches', match: '/app/coaches' },
+  { index: '/app/profile', match: '/app/profile' },
+  { index: '/app/admin/users', match: '/app/admin/users' },
+  { index: '/app/admin/roles', match: '/app/admin/roles' },
+]
+
+/**
+ * 根据当前路由 path，计算侧边栏应高亮的菜单 index。
+ * 精确匹配优先，其次按路径前缀（从长到短）查找。
+ */
+function resolveActiveMenu(path) {
+  if (!path) return '/app'
+  // 精确匹配
+  const exact = table.find(({ match }) => match === path)
+  if (exact) return exact.index
+  // 前缀匹配（从长到短）
+  const sorted = [...table].sort((a, b) => b.match.length - a.match.length)
+  for (const { index, match } of sorted) {
+    if (path.startsWith(match)) return index
+  }
+  return '/app'
 }
 </script>
 
@@ -287,12 +329,6 @@ function handleLogout() {
   gap: 10px;
 }
 
-.sidebar-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-  margin: 0 4px;
-}
-
 .user-card {
   display: flex;
   align-items: center;
@@ -353,14 +389,20 @@ function handleLogout() {
 }
 
 .logout-btn {
+  width: 100%;
   color: #f87171 !important;
   font-size: 13px;
-  padding: 6px 10px !important;
+  padding: 8px 12px !important;
   border-radius: 6px;
-  transition: background 0.2s;
+  border: 1px solid rgba(248, 113, 113, 0.3) !important;
+  background: rgba(248, 113, 113, 0.08) !important;
+  transition: all 0.2s;
+  font-weight: 500;
 }
 .logout-btn:hover {
-  background: rgba(248, 113, 113, 0.12) !important;
+  background: rgba(248, 113, 113, 0.2) !important;
+  border-color: rgba(248, 113, 113, 0.5) !important;
+  color: #fca5a5 !important;
 }
 
 /* ═══════════════════════════════════════
@@ -377,32 +419,18 @@ function handleLogout() {
 /* ═══════════════════════════════════════
    页面过渡动画
 ═══════════════════════════════════════ */
-.fade-slide-enter-active {
-  animation: fadeSlideIn 0.3s ease;
+.page-fade-enter-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
-.fade-slide-leave-active {
-  animation: fadeSlideOut 0.2s ease;
+.page-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
-
-@keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
 }
-
-@keyframes fadeSlideOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

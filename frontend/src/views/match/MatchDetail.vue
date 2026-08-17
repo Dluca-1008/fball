@@ -1,246 +1,262 @@
 <template>
   <div class="page-shell" v-loading="loading">
-    <!-- 赛事详情卡片 -->
-    <el-card class="match-hero" v-if="match">
-      <div class="match-hero-top">
-        <el-tag :type="match.matchType === 'cup' ? 'danger' : 'success'" class="type-tag">
-          {{ match.matchType === 'cup' ? '🏅 杯赛' : '⚽ 联赛' }}
-        </el-tag>
-        <el-tag :type="getStatusType(match.status)" class="status-tag">
-          {{ getStatusText(match.status) }}
-        </el-tag>
-        <el-button
-          v-if="userStore.hasPermission('match:edit')"
-          type="primary"
-          size="small"
-          class="btn-manage"
-          @click="$router.push(`/matches/${match.id}/manage`)"
-        >管理比赛</el-button>
-      </div>
-
-      <!-- 对阵横幅 -->
-      <div class="match-vs-banner">
-        <div class="team-block home">
-          <div class="team-badge">{{ match.homeTeamName?.charAt(0) || '?' }}</div>
-          <span class="team-name">{{ match.homeTeamName || '待定' }}</span>
-        </div>
-        <div class="score-display">
-          <span class="score home-score">{{ match.homeScore ?? 0 }}</span>
-          <span class="score-sep">:</span>
-          <span class="score away-score">{{ match.awayScore ?? 0 }}</span>
-        </div>
-        <div class="team-block away">
-          <span class="team-name">{{ match.awayTeamName || '待定' }}</span>
-          <div class="team-badge">{{ match.awayTeamName?.charAt(0) || '?' }}</div>
-        </div>
-      </div>
-
-      <!-- 实时比分 -->
-      <MatchLiveScore :matchId="matchId" @update="onScoreUpdate" />
-
-      <!-- 赛事信息 -->
-      <div class="match-info-grid">
-        <div class="info-item">
-          <div class="info-icon">📅</div>
-          <div class="info-label">比赛时间</div>
-          <div class="info-value">{{ match.matchDate || '-' }}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-icon">🏟️</div>
-          <div class="info-label">比赛场地</div>
-          <div class="info-value">{{ match.venue || '-' }}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-icon">⚽</div>
-          <div class="info-label">比赛类型</div>
-          <div class="info-value">{{ match.matchType === 'cup' ? '杯赛制' : '积分制联赛' }}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-icon">📊</div>
-          <div class="info-label">比赛状态</div>
-          <div class="info-value">
+    <!-- 赛事信息卡片 -->
+    <el-card class="tournament-card" v-if="match">
+      <div class="tournament-top">
+        <div class="tournament-info">
+          <div class="tournament-badge">{{ match.matchType === 'cup' ? '🏅 杯赛' : '⚽ 联赛' }}</div>
+          <h1 class="tournament-name">{{ match.name || '未命名赛事' }}</h1>
+          <div class="tournament-meta-row">
+            <span class="meta-item"><el-icon><Clock /></el-icon> {{ formatDate(match.matchDate) }}</span>
+            <span class="meta-item"><el-icon><Location /></el-icon> {{ match.venue || '待定' }}</span>
             <el-tag :type="getStatusType(match.status)" size="small">
               {{ getStatusText(match.status) }}
             </el-tag>
           </div>
         </div>
+        <el-button
+          v-if="userStore.hasPermission('match:edit') || userStore.hasRole('organizer')"
+          type="primary"
+          @click="$router.push(`/app/matches/${match.id}/manage`)"
+        >
+          <el-icon><Setting /></el-icon> 管理
+        </el-button>
       </div>
     </el-card>
 
-    <!-- 参赛球队 -->
-    <el-card class="registrations-card" v-if="registrations.length > 0">
-      <template #header>
-        <div class="card-title-bar">
-          <span class="card-title-icon">👥</span>
-          <span>参赛球队</span>
-          <span class="card-count">{{ registrations.length }} 支</span>
+    <!-- 赛事比赛列表 -->
+    <div class="section-title" v-if="matches.length > 0">
+      <span>比赛列表（{{ matches.length }} 场）</span>
+    </div>
+    <div class="match-list" v-loading="matchesLoading">
+      <el-empty v-if="!matchesLoading && matches.length === 0" description="暂无比赛" />
+      <div
+        v-for="m in matches"
+        :key="m.id"
+        class="match-item"
+        @click="$router.push(`/app/matches/${m.id}`)"
+      >
+        <div class="match-item-status">
+          <el-tag :type="getStatusType(m.status)" size="small">
+            {{ getStatusText(m.status) }}
+          </el-tag>
         </div>
-      </template>
-      <el-table :data="registrations" stripe size="small">
-        <el-table-column prop="teamName" label="球队名称" />
-        <el-table-column label="状态" width="120">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : row.status === 2 ? 'danger' : 'warning'" size="small">
-              {{ row.status === 1 ? '✅ 已接受' : row.status === 2 ? '❌ 已拒绝' : '⏳ 待处理' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+        <div class="match-item-teams">
+          <div class="team home">
+            <span class="team-name">{{ m.homeTeamName || '待定' }}</span>
+          </div>
+          <div class="match-score">
+            <template v-if="m.status === 1 || m.status === 2">
+              <span class="score">{{ m.homeScore ?? 0 }}</span>
+              <span class="sep">:</span>
+              <span class="score">{{ m.awayScore ?? 0 }}</span>
+            </template>
+            <template v-else>
+              <span class="vs">VS</span>
+            </template>
+          </div>
+          <div class="team away">
+            <span class="team-name">{{ m.awayTeamName || '待定' }}</span>
+          </div>
+        </div>
+        <div class="match-item-info">
+          <span class="info-item"><el-icon><Clock /></el-icon> {{ formatTime(m.matchDate) }}</span>
+          <span class="info-item"><el-icon><Location /></el-icon> {{ m.venue || '-' }}</span>
+          <el-button
+            size="small"
+            type="primary"
+            link
+            @click.stop="goMatchStats(m.id)"
+          >
+            查看统计
+          </el-button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
-import MatchLiveScore from '@/components/MatchLiveScore.vue'
+import { ElMessage } from 'element-plus'
+import { Clock, Location, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(false)
+const matchesLoading = ref(false)
 const match = ref(null)
-const registrations = ref([])
-const matchId = computed(() => route.params.id)
+const matches = ref([])
 
-async function fetchMatch() {
-  loading.value = true
-  try {
-    const res = await request.get(`/api/matches/${matchId.value}`)
-    match.value = res.data
-    await fetchRegistrations()
-  } finally {
-    loading.value = false
-  }
+function formatDate(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
-async function fetchRegistrations() {
-  const res = await request.get(`/api/matches/${matchId.value}/registrations`)
-  registrations.value = res.data
-}
-
-function onScoreUpdate(data) {
-  if (match.value) {
-    match.value.homeScore = data.homeScore
-    match.value.awayScore = data.awayScore
-    match.value.status = data.status
-  }
+function formatTime(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 function getStatusType(s) { return { 0: 'info', 1: 'success', 2: 'warning' }[s] || 'info' }
 function getStatusText(s) { return { 0: '未开始', 1: '进行中', 2: '已结束' }[s] || '未知' }
 
-onMounted(fetchMatch)
+function goMatchStats(matchId) {
+  router.push(`/app/matches/${matchId}/stats`).catch(err => console.error('[MatchDetail] goMatchStats failed:', err))
+}
+
+async function fetchMatch() {
+  loading.value = true
+  try {
+    const res = await request.get(`/api/matches/${route.params.id}`)
+    match.value = res.data
+  } catch (e) {
+    ElMessage.error('赛事加载失败')
+    console.error('fetchMatch error:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function fetchMatches() {
+  matchesLoading.value = true
+  try {
+    // 获取同一赛事(leagueId)下的所有比赛
+    const res = await request.get('/api/matches', { params: { page: 1, size: 1000 } })
+    const allMatches = res.data.records || res.data
+    if (match.value?.leagueId) {
+      matches.value = allMatches.filter(m => m.leagueId === match.value.leagueId)
+    } else {
+      matches.value = allMatches
+    }
+  } catch (e) {
+    console.error('fetchMatches error:', e)
+  } finally {
+    matchesLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  await fetchMatch()
+  await fetchMatches()
+})
 </script>
 
 <style scoped>
 .page-shell { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 
-.match-hero { overflow: hidden; }
-
-.match-hero-top {
+.tournament-card { overflow: hidden; }
+.tournament-top {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.type-tag, .status-tag { font-weight: 500; }
-
-.btn-manage { margin-left: auto; border-radius: 8px; }
-
-/* ── 对阵横幅 ── */
-.match-vs-banner {
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 28px 20px;
-  background: linear-gradient(135deg, #0f1c2e, #1a3a5c);
-  border-radius: 14px;
-  margin-bottom: 20px;
-  color: #fff;
+  gap: 16px;
+}
+.tournament-info { flex: 1; }
+.tournament-badge {
+  display: inline-block;
+  font-size: 12px;
+  color: #e6a23c;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.tournament-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 10px;
+}
+.tournament-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #718096;
 }
 
-.team-block {
+/* ── 比赛列表 ── */
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 8px 0;
+}
+
+.match-list {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.match-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.match-item:hover { background: #f8fafc; }
+
+.match-item-status { flex-shrink: 0; }
+.match-item-teams {
+  flex: 1;
+  display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
+  min-width: 0;
 }
-.team-block.home { text-align: left; align-items: flex-start; }
-.team-block.away { text-align: right; align-items: flex-end; }
-
-.team-badge {
-  width: 52px; height: 52px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700;
-  backdrop-filter: blur(4px);
-}
-
+.team { flex: 1; min-width: 0; }
+.team.home { text-align: right; }
+.team.away { text-align: left; }
 .team-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  max-width: 140px;
+  color: #1a202c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.score-display {
+.match-score {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 20px;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 8px;
 }
+.score { font-size: 20px; font-weight: 800; color: #1d4ed8; }
+.sep { font-size: 16px; color: #cbd5e1; }
+.vs { font-size: 13px; font-weight: 600; color: #a0aec0; letter-spacing: 1px; }
 
-.score {
-  font-size: 36px;
-  font-weight: 800;
-  color: #409eff;
-  line-height: 1;
-}
-.score-sep { font-size: 22px; color: #4a5568; }
-
-/* ── 信息网格 ── */
-.match-info-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+.match-item-info {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  margin-top: 16px;
+  flex-shrink: 0;
 }
-
 .info-item {
-  text-align: center;
-  padding: 16px 8px;
-  background: #f8fafc;
-  border-radius: 10px;
-  transition: background 0.2s;
-}
-.info-item:hover { background: #f0f4ff; }
-.info-icon { font-size: 22px; margin-bottom: 6px; }
-.info-label { font-size: 12px; color: #a0aec0; margin-bottom: 4px; }
-.info-value { font-size: 13px; font-weight: 600; color: #2d3748; }
-
-/* ── 参赛球队 ── */
-.registrations-card { overflow: hidden; }
-.card-title-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #2d3748;
-}
-.card-title-icon { font-size: 18px; }
-.card-count {
-  margin-left: auto;
+  gap: 4px;
   font-size: 12px;
   color: #a0aec0;
-  font-weight: 400;
+  white-space: nowrap;
 }
 </style>

@@ -16,7 +16,7 @@
 
     <div class="product-grid" v-loading="loading">
       <el-empty v-if="products.length === 0" description="暂无商品" />
-      <div v-for="product in products" :key="product.id" class="product-card" @click="$router.push(`/shop/products/${product.id}`)">
+      <div v-for="product in products" :key="product.id" class="product-card" @click="$router.push(`/app/shop/products/${product.id}`)">
         <div class="product-image-wrap">
           <img v-if="product.images" :src="product.images" :alt="product.name" />
           <div v-else class="no-image">📷</div>

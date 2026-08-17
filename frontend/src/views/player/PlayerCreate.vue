@@ -81,7 +81,7 @@ async function handleSubmit() {
   try {
     await request.post('/api/players', form)
     ElMessage.success('球员添加成功')
-    router.push('/players')
+    router.push('/app/players')
   } finally {
     loading.value = false
   }

@@ -21,7 +21,7 @@
           v-if="isTeamAdmin"
           type="primary"
           class="btn-manage"
-          @click="$router.push(`/teams/${team.id}/manage`)"
+          @click="$router.push(`/app/teams/${team.id}/manage`)"
         >管理球队</el-button>
       </div>
 
@@ -42,7 +42,11 @@
         </div>
       </template>
       <el-table :data="members" stripe size="small">
-        <el-table-column prop="userId" label="ID" width="80" />
+        <el-table-column label="用户名" width="120">
+          <template #default="{ row }">
+            <span>{{ row.username || row.nickname || row.userId }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="角色" width="100">
           <template #default="{ row }">
             <el-tag :type="row.role === 'admin' ? 'danger' : ''" size="small" class="role-tag">

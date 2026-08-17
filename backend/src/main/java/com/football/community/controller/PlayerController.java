@@ -2,6 +2,7 @@ package com.football.community.controller;
 
 import com.football.community.dto.Result;
 import com.football.community.entity.Player;
+import com.football.community.security.CustomUserDetails;
 import com.football.community.service.PlayerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,7 +12,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 @Tag(name = "球员管理", description = "球员CRUD接口")
 @RestController
@@ -103,5 +106,30 @@ public class PlayerController {
     public Result<?> deletePlayer(@PathVariable Long id) {
         playerService.deletePlayer(id);
         return Result.success();
+    }
+
+    @Operation(summary = "用户注册为球员", description = "当前用户注册为球员（自助注册）")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "注册成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "409", description = "已注册为球员")
+    })
+    @PostMapping("/register")
+    public Result<Player> registerPlayer(@RequestBody Player player,
+                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (playerService.isPlayerRegistered(userDetails.getId())) {
+            return Result.error(409, "您已注册为球员");
+        }
+        player.setUserId(userDetails.getId());
+        return Result.success(playerService.createPlayer(player));
+    }
+
+    @Operation(summary = "获取当前用户的球员信息", description = "获取当前登录用户的球员注册信息")
+    @GetMapping("/my")
+    public Result<Player> getMyPlayer(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        LambdaQueryWrapper<Player> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Player::getUserId, userDetails.getId());
+        return Result.success(playerService.getOne(wrapper));
     }
 }

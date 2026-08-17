@@ -5,130 +5,94 @@
       <div class="header-left">
         <div class="header-icon trophy">🏆</div>
         <div>
-          <h1 class="header-title">赛事列表</h1>
-          <p class="header-desc">管理所有赛事，追踪比赛动态</p>
+          <h1 class="header-title">赛事中心</h1>
+          <p class="header-desc">正在举办的赛事，点击查看比赛详情</p>
         </div>
       </div>
       <div class="header-actions">
-        <el-button @click="$router.push('/matches/schedule')">
+        <el-button @click="$router.push('/app/matches/schedule')">
           <el-icon><Calendar /></el-icon> 日程
         </el-button>
-        <el-button @click="$router.push('/matches/stats')">
+        <el-button @click="$router.push('/app/matches/stats')">
           <el-icon><DataAnalysis /></el-icon> 统计
         </el-button>
-        <el-button type="warning" @click="$router.push('/matches/generate')">
-          <el-icon><Operation /></el-icon> 自动赛程
-        </el-button>
-        <el-button type="primary" @click="$router.push('/matches/create')">
-          <el-icon><Plus /></el-icon> 创建比赛
+        <el-button
+          v-if="userStore.hasRole('organizer')"
+          type="primary"
+          @click="$router.push('/app/matches/create')"
+        >
+          <el-icon><Plus /></el-icon> 创建赛事
         </el-button>
       </div>
     </div>
 
-    <!-- 赛事卡片 -->
-    <div class="match-cards" v-loading="loading">
-      <el-empty v-if="!loading && matches.length === 0" description="暂无赛事" :image-size="100" />
-      <div v-for="match in matches" :key="match.id" class="match-card" @click="$router.push(`/matches/${match.id}`)">
-        <!-- 类型标签 -->
-        <div class="match-card-type">
-          <el-tag :type="match.matchType === 'cup' ? 'danger' : 'success'" size="small">
-            {{ match.matchType === 'cup' ? '🏅 杯赛' : '⚽ 联赛' }}
-          </el-tag>
-          <el-tag :type="getStatusType(match.status)" size="small">
-            {{ getStatusText(match.status) }}
+    <!-- 赛事卡片列表 -->
+    <div class="tournament-list" v-loading="loading">
+      <el-empty v-if="!loading && matches.length === 0" description="暂无正在举办的赛事" :image-size="100" />
+      <div
+        v-for="match in matches"
+        :key="match.id"
+        class="tournament-card"
+        @click="goToMatch(match)"
+      >
+        <div class="tournament-header">
+          <span class="tournament-name">{{ match.name || '未命名赛事' }}</span>
+          <el-tag type="success" size="small" round>
+            {{ match.matchDate ? formatDate(match.matchDate) : '待定日期' }}
           </el-tag>
         </div>
-
-        <!-- 对阵 -->
-        <div class="match-card-vs">
-          <div class="team home">
-            <div class="team-badge">{{ (match.homeTeamName || '?').charAt(0) }}</div>
-            <span class="team-name">{{ match.homeTeamName || '待定' }}</span>
-          </div>
-          <div class="vs-score">
-            <template v-if="match.status === 1 || match.status === 2">
-              <span class="score-num">{{ match.homeScore ?? 0 }}</span>
-              <span class="score-sep">:</span>
-              <span class="score-num">{{ match.awayScore ?? 0 }}</span>
-            </template>
-            <template v-else>
-              <span class="vs-text">VS</span>
-            </template>
-          </div>
-          <div class="team away">
-            <span class="team-name">{{ match.awayTeamName || '待定' }}</span>
-            <div class="team-badge">{{ (match.awayTeamName || '?').charAt(0) }}</div>
-          </div>
+        <div class="tournament-meta">
+          <span class="meta-item"><el-icon><Location /></el-icon> {{ match.venue || '待定场地' }}</span>
+          <span class="meta-item"><el-icon><UserFilled /></el-icon> 赛事组织者</span>
         </div>
-
-        <!-- 底部信息 -->
-        <div class="match-card-footer">
-          <span class="meta-item"><el-icon><Clock /></el-icon> {{ match.matchDate?.split(' ')[0] || '-' }}</span>
-          <span class="meta-item"><el-icon><Location /></el-icon> {{ match.venue || '-' }}</span>
-          <div class="card-actions" @click.stop>
-            <el-button type="primary" link size="small" @click="$router.push(`/matches/${match.id}`)">详情</el-button>
-            <el-button v-if="userStore.hasPermission('match:edit')" type="warning" link size="small" @click="$router.push(`/matches/${match.id}/manage`)">管理</el-button>
-          </div>
+        <div class="tournament-footer">
+          <span class="footer-hint">点击查看详情与赛程 →</span>
+          <el-button size="small" type="primary" plain @click.stop="$router.push(`/app/matches/${match.id}`)">
+            进入赛事
+          </el-button>
         </div>
       </div>
-    </div>
-
-    <!-- 分页 -->
-    <div class="pagination-wrap" v-if="total > 0">
-      <el-pagination
-        v-model:current-page="page"
-        v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50]"
-        :total="total"
-        layout="total, sizes, prev, pager, next"
-        @size-change="fetchMatches"
-        @current-change="fetchMatches"
-      />
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
-import { Calendar, DataAnalysis, Operation, Plus, Clock, Location } from '@element-plus/icons-vue'
+import { Calendar, DataAnalysis, Plus, Location, UserFilled } from '@element-plus/icons-vue'
 
+const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 const matches = ref([])
-const page = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+}
+
+function goToMatch(match) {
+  router.push(`/app/matches/${match.id}`)
+}
 
 async function fetchMatches() {
   loading.value = true
   try {
-    const res = await request.get('/api/matches', {
-      params: { page: page.value, size: pageSize.value }
-    })
-    matches.value = res.data.records
-    total.value = res.data.total
+    const res = await request.get('/api/matches', { params: { page: 1, size: 20 } })
+    matches.value = res.data.records || res.data
   } finally {
     loading.value = false
   }
-}
-
-function getStatusType(status) {
-  return { 0: 'info', 1: 'success', 2: 'warning' }[status] || 'info'
-}
-function getStatusText(status) {
-  return { 0: '未开始', 1: '进行中', 2: '已结束' }[status] || '未知'
 }
 
 onMounted(fetchMatches)
 </script>
 
 <style scoped>
-.page-shell {
-  max-width: 1000px;
-  margin: 0 auto;
-}
+.page-shell { max-width: 1000px; margin: 0 auto; }
 
 /* ── 页面头部 ── */
 .page-header {
@@ -140,161 +104,77 @@ onMounted(fetchMatches)
   flex-wrap: wrap;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+.header-left { display: flex; align-items: center; gap: 16px; }
 
 .header-icon {
-  width: 52px;
-  height: 52px;
+  width: 52px; height: 52px;
   background: linear-gradient(135deg, #e6a23c, #c45d0e);
   border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   font-size: 26px;
   box-shadow: 0 4px 14px rgba(230, 162, 60, 0.35);
 }
 
-.header-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 2px;
-}
+.header-title { font-size: 22px; font-weight: 700; color: #1a202c; margin-bottom: 2px; }
+.header-desc { font-size: 13px; color: #718096; }
 
-.header-desc {
-  font-size: 13px;
-  color: #718096;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
 /* ── 赛事卡片 ── */
-.match-cards {
+.tournament-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.match-card {
+.tournament-card {
   background: #fff;
   border-radius: 14px;
-  padding: 18px 22px;
+  padding: 20px 24px;
   cursor: pointer;
   border: 1px solid rgba(0,0,0,0.05);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
-.match-card:hover {
+.tournament-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  border-color: rgba(64, 158, 255, 0.3);
+  border-color: rgba(230, 162, 60, 0.3);
 }
 
-.match-card-type {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.match-card-vs {
+.tournament-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  margin-bottom: 10px;
 }
 
-.team {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-.team.home { justify-content: flex-end; text-align: right; }
-.team.away { justify-content: flex-start; text-align: left; }
-
-.team-badge {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #f0f4ff, #dce6ff);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.tournament-name {
+  font-size: 17px;
   font-weight: 700;
-  font-size: 16px;
-  color: #409eff;
-  flex-shrink: 0;
-}
-
-.team-name {
-  font-size: 15px;
-  font-weight: 600;
   color: #1a202c;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.vs-score {
+.tournament-meta {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  flex-shrink: 0;
-}
-
-.score-num {
-  font-size: 26px;
-  font-weight: 800;
-  color: #1d4ed8;
-  line-height: 1;
-}
-.score-sep {
-  font-size: 18px;
-  color: #cbd5e1;
-  font-weight: 300;
-}
-.vs-text {
-  font-size: 15px;
-  font-weight: 700;
-  color: #a0aec0;
-  letter-spacing: 2px;
-}
-
-.match-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f7fafc;
+  gap: 16px;
+  margin-bottom: 14px;
 }
 
 .meta-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
-  color: #a0aec0;
+  font-size: 13px;
+  color: #718096;
 }
 
-.card-actions {
+.tournament-footer {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #f0f2f5;
 }
 
-/* ── 分页 ── */
-.pagination-wrap {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
+.footer-hint { font-size: 13px; color: #a0aec0; }
 </style>

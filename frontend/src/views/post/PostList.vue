@@ -21,7 +21,7 @@
         v-for="post in posts"
         :key="post.id"
         class="post-card"
-        @click="$router.push(`/posts/${post.id}`)"
+        @click="$router.push(`/app/posts/${post.id}`)"
       >
         <div class="post-card-top">
           <el-tag size="small" class="category-tag">{{ post.category || '未分类' }}</el-tag>

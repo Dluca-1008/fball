@@ -10,6 +10,7 @@ public class Match {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private String name;
 
     private Long homeTeamId;
 

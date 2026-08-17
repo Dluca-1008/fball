@@ -127,7 +127,7 @@ async function handleSubmit() {
     })
     ElMessage.success('球队创建成功')
     await userStore.fetchPermissions()
-    router.push(`/teams/${res.data.id}`)
+    router.push(`/app/teams/${res.data.id}`)
   } finally {
     loading.value = false
   }

@@ -1,5 +1,6 @@
 package com.football.community.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.football.community.dto.RegistrationResponseRequest;
 import com.football.community.dto.ScheduleGenerateRequest;
@@ -211,5 +212,18 @@ public class MatchController {
             generated = matchService.generateLeagueSchedule(matchId, request.getTeamIds(), request.getStartDate(), request.getIntervalDays());
         }
         return Result.success(generated.size());
+    }
+
+    @GetMapping("/tournaments/ongoing")
+    @Operation(summary = "获取正在进行的赛事", description = "获取状态为未开始或进行中的赛事列表")
+    @ApiResponse(responseCode = "200", description = "成功")
+    public Result<List<Match>> getOngoingTournaments() {
+        LambdaQueryWrapper<Match> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Match::getStatus, 0, 1)
+               .isNull(Match::getHomeTeamId)
+               .isNull(Match::getAwayTeamId)
+               .orderByDesc(Match::getCreatedAt);
+        List<Match> tournaments = matchService.list(wrapper);
+        return Result.success(tournaments);
     }
 }

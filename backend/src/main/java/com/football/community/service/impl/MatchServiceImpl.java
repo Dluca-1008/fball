@@ -1,6 +1,7 @@
 package com.football.community.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -68,8 +69,22 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
         if (existing == null) {
             throw new BusinessException("赛事不存在");
         }
-        match.setId(id);
-        updateById(match);
+        // 只更新非 null 字段，避免部分更新时覆盖其他字段为 null
+        LambdaUpdateWrapper<Match> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(Match::getId, id);
+        if (match.getName() != null) wrapper.set(Match::getName, match.getName());
+        if (match.getHomeTeamId() != null) wrapper.set(Match::getHomeTeamId, match.getHomeTeamId());
+        if (match.getAwayTeamId() != null) wrapper.set(Match::getAwayTeamId, match.getAwayTeamId());
+        if (match.getLeagueId() != null) wrapper.set(Match::getLeagueId, match.getLeagueId());
+        if (match.getMatchType() != null) wrapper.set(Match::getMatchType, match.getMatchType());
+        if (match.getMatchDate() != null) wrapper.set(Match::getMatchDate, match.getMatchDate());
+        if (match.getVenue() != null) wrapper.set(Match::getVenue, match.getVenue());
+        if (match.getStatus() != null) wrapper.set(Match::getStatus, match.getStatus());
+        if (match.getHomeScore() != null) wrapper.set(Match::getHomeScore, match.getHomeScore());
+        if (match.getAwayScore() != null) wrapper.set(Match::getAwayScore, match.getAwayScore());
+        if (match.getHomeScoreHalf() != null) wrapper.set(Match::getHomeScoreHalf, match.getHomeScoreHalf());
+        if (match.getAwayScoreHalf() != null) wrapper.set(Match::getAwayScoreHalf, match.getAwayScoreHalf());
+        update(wrapper);
         return getById(id);
     }
 
@@ -168,7 +183,6 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
                 match.setCreatedAt(LocalDateTime.now());
                 save(match);
                 generated.add(match);
-
                 currentDate = currentDate.plusDays(intervalDays);
             }
         }

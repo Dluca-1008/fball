@@ -15,15 +15,15 @@
         <p class="deco-sub">让热爱，不止于看球</p>
         <div class="deco-stats">
           <div class="deco-stat">
-            <div class="deco-stat-num">1,280</div>
+            <div class="deco-stat-num">等待数据</div>
             <div class="deco-stat-label">注册球队</div>
           </div>
           <div class="deco-stat">
-            <div class="deco-stat-num">5,640</div>
+            <div class="deco-stat-num">等待数据</div>
             <div class="deco-stat-label">活跃球员</div>
           </div>
           <div class="deco-stat">
-            <div class="deco-stat-num">320</div>
+            <div class="deco-stat-num">等待数据</div>
             <div class="deco-stat-label">进行赛事</div>
           </div>
         </div>
@@ -119,7 +119,8 @@ async function handleLogin() {
   try {
     await userStore.loginAction(form.value.username, form.value.password)
     ElMessage.success('登录成功')
-    router.push('/')
+    const redirect = router.currentRoute.value.query.redirect || '/app'
+    router.push(redirect)
   } catch (error) {
     console.error(error)
   } finally {

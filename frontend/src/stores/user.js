@@ -38,9 +38,14 @@ export const useUserStore = defineStore('user', () => {
     return permissions.value.includes(code)
   }
 
+  function hasRole(code) {
+    const roles = userInfo.value?.roles || []
+    return roles.some(r => r.roleCode === code)
+  }
+
   async function logout() {
     try {
-      await request.post('/api/auth/logout')
+      await request.post('/api/auth/logout', null, { silent: true })
     } finally {
       token.value = ''
       userInfo.value = null
@@ -58,6 +63,7 @@ export const useUserStore = defineStore('user', () => {
     fetchUserInfo,
     fetchPermissions,
     hasPermission,
+    hasRole,
     logout
   }
 })

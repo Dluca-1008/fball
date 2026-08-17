@@ -9,7 +9,7 @@ import javax.validation.constraints.Size;
 public class RegisterDto {
 
     @NotBlank(message = "用户名不能为空")
-    @Size(min = 3, max = 20, message = "用户名长度为3-20个字符")
+    @Size(min = 2, max = 10, message = "用户名长度为2-10个字符")
     private String username;
 
     @NotBlank(message = "密码不能为空")

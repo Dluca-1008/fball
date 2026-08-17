@@ -80,7 +80,10 @@ public class MatchGroupController {
     })
     public Result<?> initKnockouts(@Parameter(description = "比赛ID", example = "1") @PathVariable Long matchId,
                                    @Parameter(description = "晋级队伍ID列表") @RequestBody Map<String, List<Long>> body) {
-        List<Long> teamIds = body.get("teamIds");
+        List<Long> teamIds = body != null ? body.get("teamIds") : null;
+        if (teamIds == null || teamIds.isEmpty()) {
+            return Result.error("晋级队伍列表不能为空");
+        }
         matchKnockoutService.initKnockoutBracket(matchId, teamIds);
         return Result.success();
     }
@@ -109,6 +112,9 @@ public class MatchGroupController {
     })
     public Result<?> updateKnockoutScore(@Parameter(description = "淘汰赛场次ID", example = "1") @PathVariable Long knockoutId,
                                          @Parameter(description = "比分信息") @RequestBody Map<String, Object> body) {
+        if (body.get("homeScore") == null || body.get("awayScore") == null) {
+            return Result.error("请录入双方比分");
+        }
         int homeScore = ((Number) body.get("homeScore")).intValue();
         int awayScore = ((Number) body.get("awayScore")).intValue();
         matchKnockoutService.updateKnockoutResult(knockoutId, homeScore, awayScore);

@@ -12,6 +12,7 @@ public class Player {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long userId;
 
     private Long teamId;
 
@@ -36,4 +37,10 @@ public class Player {
 
     @TableField(exist = false)
     private String teamName;
+
+    @TableField(exist = false)
+    private String playerName;
+
+    @TableField(exist = false)
+    private String userNickname;
 }

@@ -29,33 +29,24 @@ public class MatchKnockoutServiceImpl extends ServiceImpl<MatchKnockoutMapper, M
         deleteWrapper.eq(MatchKnockout::getMatchId, matchId);
         remove(deleteWrapper);
 
-        int totalRounds = (int) (Math.log(teamIds.size()) / Math.log(2));
+        // 确保队伍数为2的幂次，不足则补null
+        List<Long> teams = new ArrayList<>(teamIds);
+        while (teams.size() % 2 != 0) {
+            teams.add(null);
+        }
+        int totalTeams = teams.size();
+        // 总轮数 = log2(队伍数)，最少1轮
+        int totalRounds = Math.max(1, (int) (Math.log(totalTeams) / Math.log(2)));
+
         String[] roundNames = {"决赛", "半决赛", "1/4决赛", "1/8决赛", "1/16决赛"};
-        int roundIndex = 0;
 
-        List<List<Long>> currentRoundTeams = new ArrayList<>();
-        List<Long> firstRoundTeams = new ArrayList<>(teamIds);
-        while (firstRoundTeams.size() % 2 != 0) {
-            firstRoundTeams.add(null);
-        }
-        currentRoundTeams.add(firstRoundTeams);
-
-        List<Long> nextRoundTeams = new ArrayList<>();
-        for (int i = 0; i < firstRoundTeams.size(); i += 2) {
-            Long team1 = firstRoundTeams.get(i);
-            Long team2 = firstRoundTeams.get(i + 1);
-            if (team1 != null && team2 != null) {
-                nextRoundTeams.add(null);
-            } else if (team1 != null) {
-                nextRoundTeams.add(team1);
-            } else {
-                nextRoundTeams.add(team2);
-            }
-        }
-
+        // 从第一轮(1/8决赛等)到决赛，逐轮创建比赛
         for (int round = 0; round < totalRounds; round++) {
-            int matchesInRound = (int) Math.pow(2, totalRounds - round - 1);
-            String roundName = round < roundNames.length ? roundNames[round] : "第" + (round + 1) + "轮";
+            // 轮次索引：round=0 是第一轮（参赛队数最多），round=totalRounds-1 是决赛
+            int matchesInRound = totalTeams / (int) Math.pow(2, round + 1);
+            // 轮次名称从后往前取：决赛在最前面
+            int nameIdx = totalRounds - 1 - round;
+            String roundName = nameIdx < roundNames.length ? roundNames[nameIdx] : "第" + (round + 1) + "轮";
 
             for (int pos = 0; pos < matchesInRound; pos++) {
                 MatchKnockout knockout = new MatchKnockout();
@@ -67,15 +58,17 @@ public class MatchKnockoutServiceImpl extends ServiceImpl<MatchKnockoutMapper, M
                 knockout.setAwayScore(0);
                 knockout.setCreatedAt(LocalDateTime.now());
 
-                if (round == totalRounds - 1) {
+                // 只有第一轮填充真实队伍，后续轮次由晋级逻辑自动填充
+                if (round == 0) {
                     int teamIdx = pos * 2;
-                    if (teamIdx < teamIds.size()) {
-                        knockout.setHomeTeamId(teamIds.get(teamIdx));
+                    if (teamIdx < totalTeams && teams.get(teamIdx) != null) {
+                        knockout.setHomeTeamId(teams.get(teamIdx));
                     }
-                    if (teamIdx + 1 < teamIds.size()) {
-                        knockout.setAwayTeamId(teamIds.get(teamIdx + 1));
+                    if (teamIdx + 1 < totalTeams && teams.get(teamIdx + 1) != null) {
+                        knockout.setAwayTeamId(teams.get(teamIdx + 1));
                     }
                 }
+                // 后续轮次 homeTeamId/awayTeamId 为 null，等待晋级时填充
                 save(knockout);
             }
         }
@@ -159,6 +152,9 @@ public class MatchKnockoutServiceImpl extends ServiceImpl<MatchKnockoutMapper, M
             winnerId = knockout.getAwayTeamId();
         } else {
             throw new BusinessException("平局需要进行加时赛或点球大战，请手动指定胜者");
+        }
+        if (winnerId == null) {
+            throw new BusinessException("无法确定胜者，请手动指定");
         }
 
         knockout.setWinnerTeamId(winnerId);

@@ -67,4 +67,11 @@ public interface TeamService extends IService<Team> {
      * @param userId 操作人ID
      */
     void dissolveTeam(Long teamId, Long userId);
+
+    /**
+     * 获取用户所属球队ID。
+     * @param userId 用户ID
+     * @return 球队ID，不存在则返回null
+     */
+    Long getUserTeamId(Long userId);
 }

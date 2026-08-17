@@ -105,7 +105,7 @@ async function buyNow() {
     await ElMessageBox.confirm('确认购买该商品？', '确认订单', { type: 'info' })
     await request.post('/api/orders', null, { params: { productId: product.value.id, quantity: quantity.value } })
     ElMessage.success('下单成功')
-    router.push('/shop/orders')
+    router.push('/app/shop/orders')
   } catch (error) {
     if (error !== 'cancel') console.error(error)
   }

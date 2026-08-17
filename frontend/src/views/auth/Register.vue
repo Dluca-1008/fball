@@ -50,7 +50,7 @@
           <el-form-item prop="username">
             <div class="input-wrap">
               <el-icon class="input-icon"><User /></el-icon>
-              <el-input v-model="form.username" placeholder="用户名（3-20位）" size="large" />
+              <el-input v-model="form.username" placeholder="用户名（2-10位）" size="large" />
             </div>
           </el-form-item>
 
@@ -137,7 +137,7 @@ const validateConfirmPassword = (rule, value, callback) => {
 const rules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度为3-20个字符', trigger: 'blur' }
+    { min: 2, max: 10, message: '用户名长度为2-10个字符', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },

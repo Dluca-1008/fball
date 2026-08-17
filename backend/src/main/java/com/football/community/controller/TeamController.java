@@ -47,6 +47,13 @@ public class TeamController {
         return Result.success(teamService.getTeamList(page, size, keyword));
     }
 
+    @GetMapping("/list")
+    @Operation(summary = "获取球队列表(全部)", description = "返回所有球队，不分页")
+    @ApiResponse(responseCode = "200", description = "成功")
+    public Result<List<Team>> getTeamList() {
+        return Result.success(teamService.list());
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "获取球队详情", description = "根据ID获取球队详细信息")
     @ApiResponses({
@@ -298,5 +305,17 @@ public class TeamController {
                                   @AuthenticationPrincipal CustomUserDetails userDetails) {
         teamService.dissolveTeam(teamId, userDetails.getId());
         return Result.success();
+    }
+
+    @GetMapping("/my")
+    @Operation(summary = "获取我的球队", description = "获取当前用户所属的球队")
+    @ApiResponse(responseCode = "200", description = "成功")
+    public Result<?> getMyTeam(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long teamId = teamService.getUserTeamId(userDetails.getId());
+        if (teamId == null) {
+            return Result.success(null);
+        }
+        Team team = teamService.getById(teamId);
+        return Result.success(team);
     }
 }

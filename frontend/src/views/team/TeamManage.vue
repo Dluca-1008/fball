@@ -252,7 +252,7 @@ async function handleDissolve() {
     })
     await request.put(`/api/teams/${teamId}/dissolve`)
     ElMessage.success('球队已解散')
-    router.push('/teams')
+    router.push('/app/teams')
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)

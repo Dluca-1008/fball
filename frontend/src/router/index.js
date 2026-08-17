@@ -8,20 +8,33 @@ const routes = [
     component: () => import('@/views/auth/Login.vue')
   },
   {
+    path: '/403',
+    name: 'Forbidden',
+    component: () => import('@/views/error/403.vue')
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/auth/Register.vue')
   },
+  // ── 首页（公开，无需登录）
   {
     path: '/',
+    name: 'Home',
+    component: () => import('@/views/Home.vue')
+  },
+  // ── 需要登录的主布局路由
+  {
+    path: '/app',
     component: () => import('@/layouts/SidebarLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
+      // ── 首页（已登录用户的应用主页）
       {
         path: '',
-        name: 'Home',
-        component: () => import('@/views/Home.vue')
+        name: 'AppHome',
+        component: () => import('@/views/app/AppHome.vue')
       },
-
       // ── 社区 ──
       {
         path: 'posts',
@@ -36,7 +49,8 @@ const routes = [
       {
         path: 'chat',
         name: 'Chat',
-        component: () => import('@/views/chat/ChatList.vue')
+        component: () => import('@/views/chat/ChatList.vue'),
+        meta: { requiresAuth: true }
       },
 
       // ── 商城 ──
@@ -64,7 +78,8 @@ const routes = [
       {
         path: 'cart',
         name: 'Cart',
-        component: () => import('@/views/cart/CartList.vue')
+        component: () => import('@/views/cart/CartList.vue'),
+        meta: { requiresAuth: true }
       },
 
       // ── 赛事 ──
@@ -90,10 +105,22 @@ const routes = [
         component: () => import('@/views/match/MatchStats.vue')
       },
       {
+        path: 'matches/:id/stats',
+        name: 'MatchDetailStats',
+        component: () => import('@/views/match/MatchDetailStats.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'matches/create',
         name: 'MatchCreate',
         component: () => import('@/views/match/MatchCreate.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, permission: 'match:add' }
+      },
+      {
+        path: 'matches/:id/manage',
+        name: 'MatchManage',
+        component: () => import('@/views/match/MatchManage.vue'),
+        meta: { requiresAuth: true, permission: 'match:edit' }
       },
       {
         path: 'matches/:id',
@@ -101,10 +128,16 @@ const routes = [
         component: () => import('@/views/match/MatchDetail.vue')
       },
       {
-        path: 'matches/:id/manage',
-        name: 'MatchManage',
-        component: () => import('@/views/match/MatchManage.vue'),
-        meta: { requiresAuth: true, permission: 'match:edit' }
+        path: 'matches/friendly/sent',
+        name: 'FriendlySent',
+        component: () => import('@/views/match/MatchFriendly.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'matches/friendly/received',
+        name: 'FriendlyReceived',
+        component: () => import('@/views/match/MatchFriendly.vue'),
+        meta: { requiresAuth: true }
       },
 
       {
@@ -139,13 +172,13 @@ const routes = [
         path: 'players/create',
         name: 'PlayerCreate',
         component: () => import('@/views/player/PlayerCreate.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, permission: 'team:edit' }
       },
       {
         path: 'players/:id/manage',
         name: 'PlayerManage',
         component: () => import('@/views/player/PlayerManage.vue'),
-        meta: { requiresAuth: true, permission: 'player:edit' }
+        meta: { requiresAuth: true, permission: 'team:edit' }
       },
 
       {
@@ -168,36 +201,36 @@ const routes = [
 
       // ── 个人中心 ──
       {
-        path: 'my-invitations',
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/ProfileView.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'profile/invitations',
         name: 'MyInvitations',
         component: () => import('@/views/team/MyInvitations.vue'),
         meta: { requiresAuth: true }
       },
       {
-        path: 'change-password',
+        path: 'profile/password',
         name: 'ChangePassword',
         component: () => import('@/views/auth/ChangePassword.vue'),
         meta: { requiresAuth: true }
-      }
-    ]
-  },
+      },
 
-  // ── 管理后台 ──
-  {
-    path: '/admin',
-    name: 'Admin',
-    component: () => import('@/views/admin/AdminLayout.vue'),
-    meta: { requiresAuth: true, permission: 'user:view' },
-    children: [
+      // ── 管理后台 ──
       {
-        path: 'users',
+        path: 'admin/users',
         name: 'AdminUsers',
-        component: () => import('@/views/admin/UserList.vue')
+        component: () => import('@/views/admin/UserList.vue'),
+        meta: { requiresAuth: true }
       },
       {
-        path: 'roles',
+        path: 'admin/roles',
         name: 'AdminRoles',
-        component: () => import('@/views/admin/RoleList.vue')
+        component: () => import('@/views/admin/RoleList.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   }
@@ -211,9 +244,31 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
-  if (to.meta.requiresAuth && !userStore.token) {
-    next('/login')
+  // 需要登录的页面（包括 /app 及其子路由），未登录则跳转登录页
+  if ((to.meta.requiresAuth || to.path.startsWith('/app')) && !userStore.token) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
     return
+  }
+
+  // 已登录用户访问 / → 直接进入应用（侧边栏布局）
+  if (userStore.token && to.path === '/') {
+    next('/app')
+    return
+  }
+
+  // 已登录用户访问登录/注册页 → 跳转应用首页
+  if (userStore.token && (to.path === '/login' || to.path === '/register')) {
+    next('/app')
+    return
+  }
+
+  // 登录状态下确保用户信息已加载（刷新页面/直达时 userInfo 为 null，个人中心与侧边栏会空白）
+  if (userStore.token && !userStore.userInfo) {
+    try {
+      await userStore.fetchUserInfo()
+    } catch {
+      // 401 已由拦截器统一处理（登出并跳转登录），这里忽略
+    }
   }
 
   if (to.meta.permission && userStore.token) {
@@ -232,6 +287,11 @@ router.beforeEach(async (to, from, next) => {
   }
 
   next()
+})
+
+// 导航完成后滚动到顶部
+router.afterEach(() => {
+  window.scrollTo(0, 0)
 })
 
 export default router

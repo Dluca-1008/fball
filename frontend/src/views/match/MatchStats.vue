@@ -95,7 +95,7 @@
           <span class="card-icon">🏟️</span>
           <span>联赛统计</span>
           <el-select v-model="selectedMatchId" placeholder="选择联赛" size="small" style="width: 220px;" class="league-select">
-            <el-option v-for="m in matches" :key="m.id" :label="`${m.homeTeamName || '联赛'} #${m.id}`" :value="m.id" />
+            <el-option v-for="m in matches" :key="m.id" :label="m.name || `赛事 #${m.id}`" :value="m.id" />
           </el-select>
         </div>
       </template>
@@ -151,19 +151,25 @@ async function fetchOverallStats() {
 }
 
 async function fetchTopScorers() {
-  const res = await request.get('/api/match-stats/top-scorers', { params: { limit: 10 } })
-  topScorers.value = res.data
+  try {
+    const res = await request.get('/api/match-stats/top-scorers', { params: { limit: 10 } })
+    topScorers.value = res.data
+  } catch { /* ignored */ }
 }
 
 async function fetchLeagueStats() {
   if (!selectedMatchId.value) return
-  const res = await request.get(`/api/match-stats/league/${selectedMatchId.value}`)
-  leagueStats.value = res.data
+  try {
+    const res = await request.get(`/api/match-stats/league/${selectedMatchId.value}`)
+    leagueStats.value = res.data
+  } catch { /* ignored */ }
 }
 
 async function fetchMatches() {
-  const res = await request.get('/api/matches', { params: { page: 1, size: 50 } })
-  matches.value = res.data.records
+  try {
+    const res = await request.get('/api/matches/tournaments/ongoing')
+    matches.value = res.data || []
+  } catch { /* ignored */ }
 }
 
 function getPercentage(value, total) {

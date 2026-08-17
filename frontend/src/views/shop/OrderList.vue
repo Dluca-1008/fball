@@ -1,7 +1,7 @@
 <template>
   <div class="order-list-page">
     <div class="page-header">
-      <el-button class="btn-back" @click="$router.push('/shop/products')">
+      <el-button class="btn-back" @click="$router.push('/app/shop/products')">
         <el-icon><ArrowLeft /></el-icon> 返回商城
       </el-button>
       <div class="header-left">
