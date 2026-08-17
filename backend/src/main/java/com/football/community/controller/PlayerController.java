@@ -24,6 +24,25 @@ public class PlayerController {
     @Autowired
     private PlayerService playerService;
 
+    @Operation(summary = "获取当前用户的球员信息", description = "获取当前登录用户的球员注册信息")
+    @GetMapping("/my")
+    public Result<Player> getMyPlayer(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        LambdaQueryWrapper<Player> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Player::getUserId, userDetails.getId());
+        return Result.success(playerService.getOne(wrapper));
+    }
+
+    @Operation(summary = "用户注册为球员", description = "当前用户注册为球员（自助注册）")
+    @PostMapping("/register")
+    public Result<Player> registerPlayer(@RequestBody Player player,
+                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (playerService.isPlayerRegistered(userDetails.getId())) {
+            return Result.error(409, "您已注册为球员");
+        }
+        player.setUserId(userDetails.getId());
+        return Result.success(playerService.createPlayer(player));
+    }
+
     @Operation(summary = "获取球员列表", description = "分页获取球员列表，支持按队伍和关键词筛选")
     @Parameters({
             @Parameter(name = "teamId", description = "队伍ID筛选"),
@@ -106,30 +125,5 @@ public class PlayerController {
     public Result<?> deletePlayer(@PathVariable Long id) {
         playerService.deletePlayer(id);
         return Result.success();
-    }
-
-    @Operation(summary = "用户注册为球员", description = "当前用户注册为球员（自助注册）")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "注册成功"),
-            @ApiResponse(responseCode = "400", description = "请求参数错误"),
-            @ApiResponse(responseCode = "401", description = "未认证"),
-            @ApiResponse(responseCode = "409", description = "已注册为球员")
-    })
-    @PostMapping("/register")
-    public Result<Player> registerPlayer(@RequestBody Player player,
-                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (playerService.isPlayerRegistered(userDetails.getId())) {
-            return Result.error(409, "您已注册为球员");
-        }
-        player.setUserId(userDetails.getId());
-        return Result.success(playerService.createPlayer(player));
-    }
-
-    @Operation(summary = "获取当前用户的球员信息", description = "获取当前登录用户的球员注册信息")
-    @GetMapping("/my")
-    public Result<Player> getMyPlayer(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        LambdaQueryWrapper<Player> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Player::getUserId, userDetails.getId());
-        return Result.success(playerService.getOne(wrapper));
     }
 }

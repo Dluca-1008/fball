@@ -1,0 +1,17 @@
+12:35:03.661 [main] INFO  c.f.c.FootballCommunityApplication - Starting FootballCommunityApplication using Java 17.0.11 on Ú‘¡˙16Pro with PID 26568 (D:\Program_Study\fball\backend\target\classes started by Dluca in D:\Program_Study\fball\backend)
+12:35:03.666 [main] INFO  c.f.c.FootballCommunityApplication - No active profile set, falling back to 1 default profile: "default"
+12:35:06.139 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'; nested exception is org.springframework.boot.web.server.PortInUseException: Port 8080 is already in use
+12:35:06.182 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+

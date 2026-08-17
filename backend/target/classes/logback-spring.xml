@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出（按天滚动） -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/fball.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/fball.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 业务日志：仅打印关键操作（INFO），不打印冗杂权限信息 -->
+    <logger name="com.football.community" level="INFO"/>
+
+    <!-- Spring Security：只打印认证/授权错误，不打印每次权限校验的 INFO -->
+    <logger name="org.springframework.security" level="WARN"/>
+
+    <!-- MyBatis：INFO 级别打印 SQL 语句 -->
+    <logger name="org.apache.ibatis" level="INFO"/>
+    <logger name="com.baomidou.mybatisplus" level="WARN"/>
+
+    <!-- Redis/Redisson：只打印错误 -->
+    <logger name="org.redisson" level="WARN"/>
+    <logger name="io.lettuce" level="WARN"/>
+
+    <!-- Hibernate：只打印 SQL，不打印属性加载日志 -->
+    <logger name="org.hibernate" level="WARN"/>
+
+    <!-- 根日志 -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

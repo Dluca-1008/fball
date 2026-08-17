@@ -312,7 +312,8 @@ async function handleLogin() {
 
 .input-wrap {
   position: relative;
-  width: 100%;
+  width:100%;
+  align-items: center;
 }
 
 .input-icon {
@@ -325,9 +326,6 @@ async function handleLogin() {
   font-size: 18px;
 }
 
-:deep(.el-input) {
-  width: 100%;
-}
 :deep(.el-input__wrapper) {
   padding-left: 44px !important;
   background: transparent !important;
@@ -335,7 +333,6 @@ async function handleLogin() {
   border-radius: 12px !important;
   box-shadow: none !important;
   transition: all 0.25s;
-  width: 100%;
 }
 :deep(.el-input__wrapper:hover) {
   border-color: rgba(64, 158, 255, 0.5) !important;
