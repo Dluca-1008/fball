@@ -6,13 +6,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.football.community.entity.Player;
 import com.football.community.entity.Team;
-import com.football.community.entity.User;
 import com.football.community.exception.BusinessException;
 import com.football.community.repository.PlayerMapper;
 import com.football.community.repository.UserMapper;
+import com.football.community.security.CustomUserDetails;
 import com.football.community.service.PlayerService;
 import com.football.community.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,9 +23,6 @@ public class PlayerServiceImpl extends ServiceImpl<PlayerMapper, Player> impleme
 
     @Autowired
     private TeamService teamService;
-
-    @Autowired
-    private UserMapper userMapper;
 
     @Override
     public IPage<Player> getPlayersByTeamId(Long teamId, int page, int size) {
@@ -88,13 +86,6 @@ public class PlayerServiceImpl extends ServiceImpl<PlayerMapper, Player> impleme
                 player.setTeamName(team.getName());
             }
         }
-        // 填充用户名
-        if (player.getUserId() != null) {
-            User user = userMapper.selectById(player.getUserId());
-            if (user != null) {
-                player.setPlayerName(user.getUsername());
-                player.setUserNickname(user.getNickname());
-            }
-        }
+
     }
 }

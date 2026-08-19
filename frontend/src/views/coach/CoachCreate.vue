@@ -8,11 +8,6 @@
       <el-form-item label="姓名" prop="name">
         <el-input v-model="form.name" placeholder="请输入教练姓名" />
       </el-form-item>
-      <el-form-item label="所属球队" prop="teamId">
-        <el-select v-model="form.teamId" placeholder="请选择球队" filterable clearable style="width: 100%;">
-          <el-option v-for="t in teams" :key="t.id" :label="t.name" :value="t.id" />
-        </el-select>
-      </el-form-item>
       <el-form-item label="职位" prop="roleTitle">
         <el-select v-model="form.roleTitle" placeholder="请选择职位" style="width: 100%;">
           <el-option label="主教练" value="主教练" />

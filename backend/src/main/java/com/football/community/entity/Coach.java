@@ -12,6 +12,8 @@ public class Coach {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    private Long userId;
+
     private Long teamId;
 
     private String name;

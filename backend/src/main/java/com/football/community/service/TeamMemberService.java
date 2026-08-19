@@ -23,11 +23,11 @@ public interface TeamMemberService extends IService<TeamMember> {
     List<Map<String, Object>> getMembersByTeamId(Long teamId);
 
     /**
-     * 获取队伍入队申请列表。
+     * 获取队伍入队申请列表（含申请人球员/教练信息）。
      * @param teamId 队伍ID
      * @return 申请列表
      */
-    List<TeamApplication> getApplicationsByTeamId(Long teamId);
+    List<Map<String, Object>> getApplicationsByTeamId(Long teamId);
 
     /**
      * 获取当前用户的入队邀请列表。

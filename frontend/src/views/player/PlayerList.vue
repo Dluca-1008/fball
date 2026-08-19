@@ -11,12 +11,9 @@
       <div class="header-actions">
         <el-input v-model="keyword" placeholder="搜索球员" clearable style="width:200px" @clear="fetchPlayers" @keyup.enter="fetchPlayers" />
         <el-button @click="fetchPlayers">搜索</el-button>
-        <!-- 管理员：添加球员 -->
-        <el-button type="success" class="btn-create" @click="router.push('/app/players/create')" v-if="userStore.hasPermission('team:edit')">
-          <el-icon><Plus /></el-icon> 添加球员
-        </el-button>
-        <!-- 普通用户：注册/管理自己的球员信息 -->
-        <el-button v-if="!userStore.hasPermission('team:edit')" type="primary" class="btn-register" @click="openRegisterDialog">
+
+        <!-- 注册/管理自己的球员信息 -->
+        <el-button  type="primary" class="btn-register" @click="openRegisterDialog">
           <el-icon><User /></el-icon> {{ myPlayer ? '管理我的球员信息' : '注册球员' }}
         </el-button>
       </div>
@@ -73,11 +70,6 @@
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" :placeholder="myPlayer ? '修改姓名' : '请输入您的姓名'" maxlength="50" />
         </el-form-item>
-        <el-form-item label="所属球队">
-          <el-select v-model="form.teamId" placeholder="请选择球队（可选）" filterable clearable style="width: 100%;">
-            <el-option v-for="t in teams" :key="t.id" :label="t.name" :value="t.id" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="位置" prop="position">
           <el-select v-model="form.position" placeholder="请选择位置" style="width: 100%;">
             <el-option label="前锋" value="前锋" />
@@ -85,9 +77,6 @@
             <el-option label="后卫" value="后卫" />
             <el-option label="守门员" value="守门员" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="号码">
-          <el-input-number v-model="form.number" :min="1" :max="99" placeholder="球衣号码" style="width: 120px;" />
         </el-form-item>
         <el-form-item label="国籍">
           <el-input v-model="form.nationality" placeholder="如：中国" maxlength="50" />

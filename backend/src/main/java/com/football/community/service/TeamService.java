@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.football.community.entity.Team;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -69,7 +70,14 @@ public interface TeamService extends IService<Team> {
     void dissolveTeam(Long teamId, Long userId);
 
     /**
-     * 获取用户所属球队ID。
+     * 获取用户所属的球队ID列表。
+     * @param userId 用户ID
+     * @return 球队ID列表
+     */
+    List<Long> getUserTeamIds(Long userId);
+
+    /**
+     * 获取用户所属球队ID（优先返回管理员球队，无则返回任意一个）。
      * @param userId 用户ID
      * @return 球队ID，不存在则返回null
      */

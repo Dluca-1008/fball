@@ -26,6 +26,8 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         ensureTeamStatusColumn();
+        ensurePlayerUserIdColumn();
+        ensureCoachUserIdColumn();
         ensurePermissionExists("解散球队", "team:dissolve", 6L, 2, 5);
         ensurePermissionExists("设置成员状态", "team_member:set_status", 12L, 2, 6);
     }
@@ -37,6 +39,26 @@ public class DataInitializer implements CommandLineRunner {
             log.info("已自动添加 teams.status 列");
         } catch (Exception e) {
             // 列已存在，忽略
+        }
+    }
+
+    private void ensurePlayerUserIdColumn() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE players ADD COLUMN user_id BIGINT");
+            jdbcTemplate.execute("CREATE INDEX idx_players_user_id ON players(user_id)");
+            log.info("已自动添加 players.user_id 列");
+        } catch (Exception e) {
+            // 列或索引已存在，忽略
+        }
+    }
+
+    private void ensureCoachUserIdColumn() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE coaches ADD COLUMN user_id BIGINT");
+            jdbcTemplate.execute("CREATE INDEX idx_coaches_user_id ON coaches(user_id)");
+            log.info("已自动添加 coaches.user_id 列");
+        } catch (Exception e) {
+            // 列或索引已存在，忽略
         }
     }
 

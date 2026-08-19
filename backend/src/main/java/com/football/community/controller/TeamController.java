@@ -143,7 +143,7 @@ public class TeamController {
             @ApiResponse(responseCode = "403", description = "无权限"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
-    public Result<List<TeamApplication>> getApplications(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId) {
+    public Result<List<Map<String, Object>>> getApplications(@Parameter(description = "球队ID", example = "1") @PathVariable Long teamId) {
         return Result.success(teamMemberService.getApplicationsByTeamId(teamId));
     }
 
@@ -308,14 +308,34 @@ public class TeamController {
     }
 
     @GetMapping("/my")
-    @Operation(summary = "获取我的球队", description = "获取当前用户所属的球队")
+    @Operation(summary = "获取我的球队列表", description = "获取当前用户所属的所有球队")
     @ApiResponse(responseCode = "200", description = "成功")
-    public Result<?> getMyTeam(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long teamId = teamService.getUserTeamId(userDetails.getId());
-        if (teamId == null) {
-            return Result.success(null);
+    public Result<?> getMyTeams(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getId();
+        List<Long> teamIds = teamService.getUserTeamIds(userId);
+        if (teamIds == null || teamIds.isEmpty()) {
+            return Result.success(List.of());
         }
-        Team team = teamService.getById(teamId);
-        return Result.success(team);
+        List<Map<String, Object>> result = teamIds.stream()
+                .map(teamId -> {
+                    Team team = teamService.getById(teamId);
+                    if (team == null) return null;
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id", team.getId());
+                    map.put("name", team.getName());
+                    map.put("logo", team.getLogo());
+                    map.put("description", team.getDescription());
+                    map.put("stadium", team.getStadium());
+                    map.put("city", team.getCity());
+                    map.put("country", team.getCountry());
+                    map.put("createdBy", team.getCreatedBy());
+                    map.put("status", team.getStatus());
+                    map.put("createdAt", team.getCreatedAt());
+                    map.put("isAdmin", teamService.isTeamAdmin(teamId, userId));
+                    return map;
+                })
+                .filter(t -> t != null)
+                .collect(java.util.stream.Collectors.toList());
+        return Result.success(result);
     }
 }

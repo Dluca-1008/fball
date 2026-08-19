@@ -6,6 +6,7 @@ import com.football.community.entity.User;
 import com.football.community.dto.RegisterDto;
 import com.football.community.dto.LoginDto;
 import com.football.community.dto.ChangePasswordDto;
+import com.football.community.dto.UpdateUserInfoDto;
 
 import java.util.List;
 import java.util.Set;
@@ -87,4 +88,12 @@ public interface UserService extends IService<User> {
      * @param dto 密码修改信息
      */
     void changePassword(String username, ChangePasswordDto dto);
+
+    /**
+     * 更新用户个人资料。
+     * @param userId 用户ID
+     * @param dto 用户信息更新内容
+     * @return 更新后的用户实体
+     */
+    User updateUserInfo(Long userId, UpdateUserInfoDto dto);
 }

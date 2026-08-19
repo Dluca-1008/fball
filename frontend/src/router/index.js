@@ -1,11 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
+
+let isHandling401 = false
 
 const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/auth/Login.vue')
+    component: () => import('@/views/auth/Login.vue'),
+    meta: { public: true }
   },
   {
     path: '/403',
@@ -146,6 +150,11 @@ const routes = [
         component: () => import('@/views/team/TeamList.vue')
       },
       {
+        path: 'my-teams',
+        name: 'MyTeams',
+        component: () => import('@/views/team/MyTeams.vue')
+      },
+      {
         path: 'teams/create',
         name: 'TeamCreate',
         component: () => import('@/views/team/TeamCreate.vue'),
@@ -245,8 +254,13 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
   // 需要登录的页面（包括 /app 及其子路由），未登录则跳转登录页
-  if ((to.meta.requiresAuth || to.path.startsWith('/app')) && !userStore.token) {
-    next({ path: '/login', query: { redirect: to.fullPath } })
+  const needAuth = to.meta.requiresAuth || to.path.startsWith('/app')
+
+  if (needAuth && !userStore.token) {
+    // request.js 已标记过期，把 expired 带上让登录页弹提示
+    const expired = localStorage.getItem('__fball_expired__')
+    if (expired) localStorage.removeItem('__fball_expired__')
+    next({ path: '/login', query: { expired: expired ? '1' : null, redirect: to.fullPath } })
     return
   }
 
@@ -262,12 +276,21 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 登录状态下确保用户信息已加载（刷新页面/直达时 userInfo 为 null，个人中心与侧边栏会空白）
-  if (userStore.token && !userStore.userInfo) {
+  // token 存在但 userInfo 缺失时，先验证 token 是否仍然有效
+  // 过期 token 会在此处触发 401，同步清除后跳转到登录页
+  if (userStore.token && !userStore.userInfo && needAuth && !isHandling401) {
     try {
+      isHandling401 = true
       await userStore.fetchUserInfo()
     } catch {
-      // 401 已由拦截器统一处理（登出并跳转登录），这里忽略
+      localStorage.removeItem('token')
+      userStore.token = ''
+      userStore.userInfo = null
+      userStore.permissions = []
+      // 提示由 request.js 统一处理，守卫只负责跳转
+      next({ path: '/login', query: { expired: '1', redirect: to.fullPath } })
+      setTimeout(() => { isHandling401 = false }, 3000)
+      return
     }
   }
 
@@ -276,7 +299,12 @@ router.beforeEach(async (to, from, next) => {
       try {
         await userStore.fetchPermissions()
       } catch {
-        next('/login')
+        localStorage.removeItem('token')
+        userStore.token = ''
+        userStore.userInfo = null
+        userStore.permissions = []
+        // 提示由 request.js 统一处理
+        next({ path: '/login', query: { expired: '1' } })
         return
       }
     }

@@ -71,11 +71,19 @@
           </el-menu-item>
           <el-menu-item index="/app/teams">
             <el-icon><UserFilled /></el-icon>
-            <span>球队管理</span>
+            <span>球队列表</span>
+          </el-menu-item>
+          <el-menu-item index="/app/my-teams">
+            <el-icon><HomeFilled /></el-icon>
+            <span>我的球队</span>
           </el-menu-item>
           <el-menu-item index="/app/players">
             <el-icon><Avatar /></el-icon>
             <span>球员管理</span>
+          </el-menu-item>
+          <el-menu-item index="/app/coaches">
+            <el-icon><School /></el-icon>
+            <span>教练员管理</span>
           </el-menu-item>
           <el-menu-item index="/app/matches/create" v-if="userStore.hasRole('organizer')">
             <el-icon><Plus /></el-icon>
@@ -143,7 +151,7 @@ import {
   HomeFilled, ChatDotRound, ShoppingBag, Trophy, User,
   Document, Message, Goods, List, ShoppingCart,
   Calendar, UserFilled, Avatar, SwitchButton,
-  Setting, Key, Plus
+  Setting, Key, Plus, School
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -170,6 +178,7 @@ const table = [
   { index: '/app/cart',  match: '/app/cart' },
   { index: '/app/matches', match: '/app/matches' },
   { index: '/app/teams', match: '/app/teams' },
+  { index: '/app/my-teams', match: '/app/my-teams' },
   { index: '/app/players', match: '/app/players' },
   { index: '/app/coaches', match: '/app/coaches' },
   { index: '/app/profile', match: '/app/profile' },

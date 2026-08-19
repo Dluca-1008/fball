@@ -92,14 +92,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Right } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
+
+// token 过期后跳转过来，显示提示
+onMounted(() => {
+  if (route.query.expired) {
+    ElMessage.error('登录已过期，请重新登录')
+  }
+})
 
 const formRef = ref(null)
 const loading = ref(false)

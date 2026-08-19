@@ -4,7 +4,9 @@ import com.football.community.dto.LoginDto;
 import com.football.community.dto.RegisterDto;
 import com.football.community.dto.ChangePasswordDto;
 import com.football.community.dto.Result;
+import com.football.community.dto.UpdateUserInfoDto;
 import com.football.community.entity.User;
+import com.football.community.security.CustomUserDetails;
 import com.football.community.security.JwtTokenProvider;
 import com.football.community.security.TokenSessionService;
 import com.football.community.service.UserService;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -103,6 +106,20 @@ public class AuthController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         User user = userService.findByUsername(username);
+        user.setPassword(null);
+        return Result.success(user);
+    }
+
+    @Operation(summary = "更新当前用户资料", description = "更新当前登录用户的个人资料（昵称、邮箱、手机号、性别）")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "更新成功"),
+            @ApiResponse(responseCode = "401", description = "未认证"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    @PostMapping("/info")
+    public Result<User> updateUserInfo(@RequestBody UpdateUserInfoDto dto,
+                                        @AuthenticationPrincipal CustomUserDetails userDetails) {
+        User user = userService.updateUserInfo(userDetails.getId(), dto);
         user.setPassword(null);
         return Result.success(user);
     }

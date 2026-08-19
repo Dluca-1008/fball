@@ -48,4 +48,11 @@ public interface CoachService extends IService<Coach> {
      * @param id 教练ID
      */
     void deleteCoach(Long id);
+
+    /**
+     * 检查用户是否已注册为教练。
+     * @param userId 用户ID
+     * @return true-已注册, false-未注册
+     */
+    boolean isCoachRegistered(Long userId);
 }

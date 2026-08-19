@@ -79,21 +79,6 @@ public class PlayerController {
         return Result.success(playerService.getById(id));
     }
 
-    @Operation(summary = "创建球员", description = "新增一名球员")
-    @Parameter(description = "球员信息")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "创建成功"),
-            @ApiResponse(responseCode = "400", description = "请求参数错误"),
-            @ApiResponse(responseCode = "401", description = "未认证"),
-            @ApiResponse(responseCode = "403", description = "无权限"),
-            @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    })
-    @PostMapping
-    @PreAuthorize("hasAuthority('team:edit')")
-    public Result<Player> createPlayer(@RequestBody Player player) {
-        return Result.success(playerService.createPlayer(player));
-    }
-
     @Operation(summary = "更新球员信息", description = "修改指定球员的信息")
     @Parameters({
             @Parameter(name = "id", description = "球员ID", required = true),

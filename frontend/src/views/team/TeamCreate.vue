@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
@@ -89,6 +89,8 @@ const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
 
+const nickname = computed(() => userStore.userInfo?.nickname || userStore.userInfo?.username || '')
+
 const form = reactive({
   name: '',
   city: '',
@@ -96,8 +98,8 @@ const form = reactive({
   stadium: '',
   description: '',
   memberType: 'player',
-  playerInfo: { name: '', position: '', number: null, nationality: '' },
-  coachInfo: { name: '', roleTitle: '', nationality: '', experienceYears: null }
+  playerInfo: { name: nickname.value, position: '', number: null, nationality: '' },
+  coachInfo: { name: nickname.value, roleTitle: '', nationality: '', experienceYears: null }
 })
 
 const rules = {

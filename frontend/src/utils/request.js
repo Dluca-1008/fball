@@ -38,10 +38,13 @@ service.interceptors.response.use(
     if (error.response) {
       const { status } = error.response
       if (status === 401) {
+        // 设置过期标志（守卫会读取并显示提示），再清除 token
+        localStorage.setItem('__fball_expired__', '1')
         const userStore = useUserStore()
-        userStore.logout()
-        router.push('/login')
-        ElMessage.error('登录已过期，请重新登录')
+        localStorage.removeItem('token')
+        userStore.token = ''
+        userStore.userInfo = null
+        userStore.permissions = []
       } else if (!silent) {
         if (status === 403) {
           ElMessage.error('没有权限访问')

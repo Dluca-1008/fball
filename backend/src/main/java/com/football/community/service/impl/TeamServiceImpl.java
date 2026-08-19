@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -74,6 +75,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 
         if ("player".equals(memberType) && memberInfo != null) {
             Player player = new Player();
+            player.setUserId(userId);
             player.setTeamId(team.getId());
             player.setName((String) memberInfo.get("name"));
             player.setPosition((String) memberInfo.get("position"));
@@ -83,6 +85,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
             playerMapper.insert(player);
         } else if ("coach".equals(memberType) && memberInfo != null) {
             Coach coach = new Coach();
+            coach.setUserId(userId);
             coach.setTeamId(team.getId());
             coach.setName((String) memberInfo.get("name"));
             coach.setRoleTitle((String) memberInfo.get("roleTitle"));
@@ -162,5 +165,10 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
     @Override
     public Long getUserTeamId(Long userId) {
         return teamMemberMapper.getTeamIdByUserId(userId);
+    }
+
+    @Override
+    public List<Long> getUserTeamIds(Long userId) {
+        return teamMemberMapper.getTeamIdsByUserId(userId);
     }
 }

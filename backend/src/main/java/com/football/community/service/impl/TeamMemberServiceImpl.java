@@ -16,6 +16,7 @@ import com.football.community.repository.TeamInvitationMapper;
 import com.football.community.repository.TeamMemberMapper;
 import com.football.community.service.TeamMemberService;
 import com.football.community.service.TeamService;
+import com.football.community.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +31,6 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
 
     @Autowired
     private TeamService teamService;
-
-    @Autowired
-    private TeamMemberMapper teamMemberMapper;
 
     @Autowired
     private TeamInvitationMapper teamInvitationMapper;
@@ -62,13 +60,29 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
         return members.stream().map(m -> {
             Map<String, Object> map = new HashMap<>();
             map.put("userId", m.getUserId());
-            map.put("username", m.getUserId()); // fallback
+
             // 查询用户名
             com.football.community.entity.User user = userMapper.selectById(m.getUserId());
             if (user != null) {
                 map.put("username", user.getUsername());
                 map.put("nickname", user.getNickname());
             }
+
+            // 查询球员/教练姓名
+            String memberName = null;
+            if ("player".equals(m.getMemberType())) {
+                LambdaQueryWrapper<Player> pw = new LambdaQueryWrapper<>();
+                pw.eq(Player::getTeamId, teamId).eq(Player::getUserId, m.getUserId());
+                Player player = playerMapper.selectOne(pw);
+                if (player != null) memberName = player.getName();
+            } else if ("coach".equals(m.getMemberType())) {
+                LambdaQueryWrapper<Coach> cw = new LambdaQueryWrapper<>();
+                cw.eq(Coach::getTeamId, teamId).eq(Coach::getUserId, m.getUserId());
+                Coach coach = coachMapper.selectOne(cw);
+                if (coach != null) memberName = coach.getName();
+            }
+            map.put("memberName", memberName);
+
             map.put("role", m.getRole());
             map.put("memberType", m.getMemberType());
             map.put("status", m.getStatus());
@@ -78,11 +92,60 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
     }
 
     @Override
-    public List<TeamApplication> getApplicationsByTeamId(Long teamId) {
+    public List<Map<String, Object>> getApplicationsByTeamId(Long teamId) {
         LambdaQueryWrapper<TeamApplication> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TeamApplication::getTeamId, teamId)
                .orderByDesc(TeamApplication::getCreatedAt);
-        return teamApplicationMapper.selectList(wrapper);
+        List<TeamApplication> applications = teamApplicationMapper.selectList(wrapper);
+
+        return applications.stream().map(app -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", app.getId());
+            map.put("teamId", app.getTeamId());
+            map.put("userId", app.getUserId());
+            map.put("reason", app.getReason());
+            map.put("memberType", app.getMemberType());
+            map.put("status", app.getStatus());
+            map.put("createdAt", app.getCreatedAt());
+            map.put("reviewTime", app.getReviewTime());
+
+            // 查询用户名
+            com.football.community.entity.User user = userMapper.selectById(app.getUserId());
+            if (user != null) {
+                map.put("username", user.getUsername());
+                map.put("nickname", user.getNickname());
+            }
+
+            // 查询已注册球员/教练信息
+            Map<String, Object> memberInfo = null;
+            if ("player".equals(app.getMemberType())) {
+                LambdaQueryWrapper<Player> pw = new LambdaQueryWrapper<>();
+                pw.eq(Player::getUserId, app.getUserId());
+                Player player = playerMapper.selectOne(pw);
+                if (player != null) {
+                    memberInfo = new HashMap<>();
+                    memberInfo.put("name", player.getName());
+                    memberInfo.put("position", player.getPosition());
+                    memberInfo.put("number", player.getNumber());
+                    memberInfo.put("nationality", player.getNationality());
+                    memberInfo.put("teamName", player.getTeamName());
+                }
+            } else if ("coach".equals(app.getMemberType())) {
+                LambdaQueryWrapper<Coach> cw = new LambdaQueryWrapper<>();
+                cw.eq(Coach::getUserId, app.getUserId());
+                Coach coach = coachMapper.selectOne(cw);
+                if (coach != null) {
+                    memberInfo = new HashMap<>();
+                    memberInfo.put("name", coach.getName());
+                    memberInfo.put("roleTitle", coach.getRoleTitle());
+                    memberInfo.put("nationality", coach.getNationality());
+                    memberInfo.put("experienceYears", coach.getExperienceYears());
+                    memberInfo.put("teamName", coach.getTeamName());
+                }
+            }
+            map.put("memberInfo", memberInfo);
+            return map;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -152,12 +215,13 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
     @Transactional
     public void applyToJoin(Long teamId, Long userId, String reason, String memberType, Map<String, Object> memberInfo) {
         boolean isMember = teamService.isTeamMember(teamId, userId);
-        // 检查用户是否已注册为球员
-        if (!playerService.isPlayerRegistered(userId)) {
-            throw new BusinessException("您尚未注册为球员，请先在球员管理页面注册");
-        }
         if (isMember) {
             throw new BusinessException("您已是该球队成员");
+        }
+
+        // 球员需要先注册为球员
+        if ("player".equals(memberType) && !playerService.isPlayerRegistered(userId)) {
+            throw new BusinessException("您尚未注册为球员，请先在球员管理页面注册");
         }
 
         LambdaQueryWrapper<TeamApplication> wrapper = new LambdaQueryWrapper<>();
@@ -183,10 +247,6 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
     @Transactional
     public String inviteMember(Long teamId, Long userId, Long inviterId) {
         boolean isMember = teamService.isTeamMember(teamId, userId);
-        // 检查用户是否已注册为球员
-        if (!playerService.isPlayerRegistered(userId)) {
-            throw new BusinessException("您尚未注册为球员，请先在球员管理页面注册");
-        }
         if (isMember) {
             throw new BusinessException("该用户已是球队成员");
         }
@@ -319,26 +379,48 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
     }
 
     private void createMemberProfile(Long teamId, Long userId, String memberType, Map<String, Object> memberInfo) {
-        if (memberInfo == null) return;
-
         if ("player".equals(memberType)) {
-            Player player = new Player();
-            player.setTeamId(teamId);
-            player.setName((String) memberInfo.get("name"));
-            player.setPosition((String) memberInfo.get("position"));
-            player.setNumber(memberInfo.get("number") != null ? ((Number) memberInfo.get("number")).intValue() : null);
-            player.setNationality((String) memberInfo.get("nationality"));
-            player.setCreatedAt(LocalDateTime.now());
-            playerMapper.insert(player);
+            // 若已注册为球员，仅更新 teamId；否则查询申请信息或跳过
+            LambdaQueryWrapper<Player> pw = new LambdaQueryWrapper<>();
+            pw.eq(Player::getUserId, userId);
+            Player player = playerMapper.selectOne(pw);
+            if (player != null) {
+                if (player.getTeamId() == null) {
+                    player.setTeamId(teamId);
+                    playerMapper.updateById(player);
+                }
+            } else if (memberInfo != null && memberInfo.get("name") != null) {
+                // 审批时 memberInfo 可能为 null，尝试从申请记录获取
+                player = new Player();
+                player.setUserId(userId);
+                player.setTeamId(teamId);
+                player.setName((String) memberInfo.get("name"));
+                player.setPosition((String) memberInfo.get("position"));
+                player.setNumber(memberInfo.get("number") != null ? ((Number) memberInfo.get("number")).intValue() : null);
+                player.setNationality((String) memberInfo.get("nationality"));
+                player.setCreatedAt(LocalDateTime.now());
+                playerMapper.insert(player);
+            }
         } else if ("coach".equals(memberType)) {
-            Coach coach = new Coach();
-            coach.setTeamId(teamId);
-            coach.setName((String) memberInfo.get("name"));
-            coach.setRoleTitle((String) memberInfo.get("roleTitle"));
-            coach.setNationality((String) memberInfo.get("nationality"));
-            coach.setExperienceYears(memberInfo.get("experienceYears") != null ? ((Number) memberInfo.get("experienceYears")).intValue() : null);
-            coach.setCreatedAt(LocalDateTime.now());
-            coachMapper.insert(coach);
+            LambdaQueryWrapper<Coach> cw = new LambdaQueryWrapper<>();
+            cw.eq(Coach::getUserId, userId);
+            Coach coach = coachMapper.selectOne(cw);
+            if (coach != null) {
+                if (coach.getTeamId() == null) {
+                    coach.setTeamId(teamId);
+                    coachMapper.updateById(coach);
+                }
+            } else if (memberInfo != null && memberInfo.get("name") != null) {
+                coach = new Coach();
+                coach.setUserId(userId);
+                coach.setTeamId(teamId);
+                coach.setName((String) memberInfo.get("name"));
+                coach.setRoleTitle((String) memberInfo.get("roleTitle"));
+                coach.setNationality((String) memberInfo.get("nationality"));
+                coach.setExperienceYears(memberInfo.get("experienceYears") != null ? ((Number) memberInfo.get("experienceYears")).intValue() : null);
+                coach.setCreatedAt(LocalDateTime.now());
+                coachMapper.insert(coach);
+            }
         }
     }
 }

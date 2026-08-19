@@ -42,9 +42,9 @@
         </div>
       </template>
       <el-table :data="members" stripe size="small">
-        <el-table-column label="用户名" width="120">
+        <el-table-column label="成员" width="120">
           <template #default="{ row }">
-            <span>{{ row.username || row.nickname || row.userId }}</span>
+            <span>{{ row.memberName}}</span>
           </template>
         </el-table-column>
         <el-table-column label="角色" width="100">
@@ -73,47 +73,12 @@
     </el-card>
 
     <!-- 申请加入弹窗 -->
-    <el-dialog v-model="applyDialogVisible" title="申请加入球队" width="520px" class="apply-dialog">
+    <el-dialog v-model="applyDialogVisible" title="申请加入球队" width="480px" class="apply-dialog">
       <el-form :model="applyForm" label-width="80px" label-position="top">
-        <el-form-item label="身份类型">
-          <el-radio-group v-model="applyForm.memberType" class="type-radio-group">
-            <el-radio-button value="player">⚽ 球员</el-radio-button>
-            <el-radio-button value="coach">🎩 教练</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item label="申请理由">
-          <el-input v-model="applyForm.reason" type="textarea" :rows="2" placeholder="选填" />
+          <el-input v-model="applyForm.reason" type="textarea" :rows="3" placeholder="请简要说明申请理由（选填）" />
         </el-form-item>
-        <template v-if="applyForm.memberType === 'player'">
-          <el-form-item label="姓名"><el-input v-model="applyForm.playerInfo.name" placeholder="请输入姓名" /></el-form-item>
-          <el-form-item label="位置">
-            <el-select v-model="applyForm.playerInfo.position" placeholder="请选择" style="width:100%">
-              <el-option label="前锋" value="前锋" />
-              <el-option label="中场" value="中场" />
-              <el-option label="后卫" value="后卫" />
-              <el-option label="守门员" value="守门员" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="号码">
-            <el-input-number v-model="applyForm.playerInfo.number" :min="1" :max="99" style="width:100%" />
-          </el-form-item>
-          <el-form-item label="国籍"><el-input v-model="applyForm.playerInfo.nationality" placeholder="请输入国籍" /></el-form-item>
-        </template>
-        <template v-if="applyForm.memberType === 'coach'">
-          <el-form-item label="姓名"><el-input v-model="applyForm.coachInfo.name" placeholder="请输入姓名" /></el-form-item>
-          <el-form-item label="职位">
-            <el-select v-model="applyForm.coachInfo.roleTitle" placeholder="请选择" style="width:100%">
-              <el-option label="主教练" value="主教练" />
-              <el-option label="助理教练" value="助理教练" />
-              <el-option label="体能教练" value="体能教练" />
-              <el-option label="守门员教练" value="守门员教练" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="国籍"><el-input v-model="applyForm.coachInfo.nationality" placeholder="请输入国籍" /></el-form-item>
-          <el-form-item label="执教年限">
-            <el-input-number v-model="applyForm.coachInfo.experienceYears" :min="0" :max="50" style="width:100%" />
-          </el-form-item>
-        </template>
+        <div class="apply-hint">提交后将自动关联您的球员/教练注册信息</div>
       </el-form>
       <template #footer>
         <el-button @click="applyDialogVisible = false">取消</el-button>
@@ -142,9 +107,7 @@ const applying = ref(false)
 
 const applyForm = reactive({
   reason: '',
-  memberType: 'player',
-  playerInfo: { name: '', position: '', number: null, nationality: '' },
-  coachInfo: { name: '', roleTitle: '', nationality: '', experienceYears: null }
+  memberType: 'player'
 })
 
 const isMember = computed(() => members.value.some(m => m.userId === userStore.userInfo?.id))
@@ -167,12 +130,12 @@ async function fetchMembers() {
 }
 
 async function submitApply() {
-  const memberInfo = applyForm.memberType === 'player' ? applyForm.playerInfo : applyForm.coachInfo
-  if (!memberInfo.name) { ElMessage.error('请输入您的姓名'); return }
   applying.value = true
   try {
     await request.post(`/api/teams/${route.params.id}/members/apply`, {
-      reason: applyForm.reason, memberType: applyForm.memberType, memberInfo
+      reason: applyForm.reason || null,
+      memberType: applyForm.memberType,
+      memberInfo: null
     })
     ElMessage.success('申请已提交，请等待审核')
     applyDialogVisible.value = false
@@ -221,4 +184,5 @@ onMounted(fetchTeam)
 :deep(.apply-dialog .el-dialog__footer) { padding: 12px 24px 20px; }
 .type-radio-group { display: flex; gap: 10px; }
 :deep(.el-radio-button__inner) { border-radius: 8px !important; padding: 8px 20px !important; }
+.apply-hint { font-size: 12px; color: #909399; margin-top: 4px; }
 </style>

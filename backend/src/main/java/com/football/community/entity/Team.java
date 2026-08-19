@@ -2,7 +2,6 @@ package com.football.community.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,8 +16,6 @@ public class Team {
     private String logo;
 
     private String description;
-
-    private LocalDate foundedDate;
 
     private String stadium;
 

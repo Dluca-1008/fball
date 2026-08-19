@@ -38,7 +38,11 @@
           <el-button type="primary" size="small" @click="inviteDialogVisible = true">邀请成员</el-button>
         </div>
         <el-table :data="members" stripe>
-          <el-table-column prop="userId" label="用户ID" width="80" />
+          <el-table-column label="姓名" width="120">
+            <template #default="{ row }">
+              <span>{{ row.memberName || '-' }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="角色" width="120">
             <template #default="{ row }">
               <el-tag :type="row.role === 'admin' ? 'danger' : 'info'">{{ row.role === 'admin' ? '管理员' : '成员' }}</el-tag>
@@ -70,14 +74,30 @@
 
       <el-tab-pane label="申请审核" name="applications">
         <el-table :data="applications" stripe>
-          <el-table-column prop="userId" label="申请人ID" width="100" />
-          <el-table-column label="申请身份" width="80">
+          <el-table-column label="申请人">
             <template #default="{ row }">
-              <el-tag :type="row.memberType === 'coach' ? 'warning' : 'success'">{{ row.memberType === 'coach' ? '教练' : '球员' }}</el-tag>
+              <div class="applicant-cell">
+                <span>{{ row.nickname || row.username || row.userId }}</span>
+                <el-tag :type="row.memberType === 'coach' ? 'warning' : 'success'" size="small">
+                  {{ row.memberType === 'coach' ? '教练' : '球员' }}
+                </el-tag>
+              </div>
+              <div v-if="row.memberInfo" class="applicant-profile">
+                <template v-if="row.memberType === 'player'">
+                  <span class="profile-item">姓名：{{ row.memberInfo.name }}</span>
+                  <span class="profile-item">位置：{{ row.memberInfo.position }}</span>
+                  <span v-if="row.memberInfo.number" class="profile-item">号码：#{{ row.memberInfo.number }}</span>
+                </template>
+                <template v-else>
+                  <span class="profile-item">姓名：{{ row.memberInfo.name }}</span>
+                  <span class="profile-item">职位：{{ row.memberInfo.roleTitle }}</span>
+                  <span v-if="row.memberInfo.experienceYears" class="profile-item">年限：{{ row.memberInfo.experienceYears }}年</span>
+                </template>
+              </div>
             </template>
           </el-table-column>
-          <el-table-column prop="reason" label="申请理由" />
-          <el-table-column prop="createdAt" label="申请时间" />
+          <el-table-column prop="reason" label="申请理由" min-width="150" />
+          <el-table-column prop="createdAt" label="申请时间" width="160" />
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="row.status === 0 ? 'warning' : row.status === 1 ? 'success' : 'danger'">
@@ -207,10 +227,11 @@ async function handleToggleStatus(row) {
 }
 
 async function handleApprove(row) {
+  await ElMessageBox.confirm(`确定通过 ${row.nickname || row.username || row.userId} 的申请？`, '确认')
   await request.put(`/api/teams/${teamId}/members/${row.userId}/approve`, {
     status: 1,
     memberType: row.memberType || 'player',
-    memberInfo: null
+    memberInfo: row.memberInfo || null
   })
   ElMessage.success('已通过')
   fetchApplications()
@@ -279,6 +300,28 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+}
+
+.applicant-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.applicant-profile {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #718096;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-item {
+  background: #f7f8fa;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .section-header {

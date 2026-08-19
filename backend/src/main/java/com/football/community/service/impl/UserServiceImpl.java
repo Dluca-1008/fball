@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.football.community.dto.LoginDto;
 import com.football.community.dto.RegisterDto;
 import com.football.community.dto.ChangePasswordDto;
+import com.football.community.dto.UpdateUserInfoDto;
 import com.football.community.entity.ChatMessage;
 import com.football.community.entity.Comment;
 import com.football.community.entity.Order;
@@ -195,5 +196,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         user.setUpdatedAt(LocalDateTime.now());
         updateById(user);
+    }
+
+    @Override
+    public User updateUserInfo(Long userId, UpdateUserInfoDto dto) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        if (dto.getNickname() != null) user.setNickname(dto.getNickname());
+        if (dto.getEmail() != null) user.setEmail(dto.getEmail());
+        if (dto.getPhone() != null) user.setPhone(dto.getPhone());
+        if (dto.getGender() != null) user.setGender(dto.getGender());
+        if (dto.getAvatar() != null) user.setAvatar(dto.getAvatar());
+        user.setUpdatedAt(LocalDateTime.now());
+        updateById(user);
+        return user;
     }
 }

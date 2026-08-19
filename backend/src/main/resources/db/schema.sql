@@ -98,11 +98,11 @@ CREATE TABLE IF NOT EXISTS teams (
   name VARCHAR(100) NOT NULL,
   logo VARCHAR(255),
   description TEXT,
-  founded_date DATE,
   stadium VARCHAR(100),
   city VARCHAR(50),
   country VARCHAR(50),
   created_by BIGINT,
+  status TINYINT DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS team_applications (
 -- 球员表
 CREATE TABLE IF NOT EXISTS players (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT,
   team_id BIGINT,
   name VARCHAR(100) NOT NULL,
   position VARCHAR(50),
@@ -167,12 +168,14 @@ CREATE TABLE IF NOT EXISTS players (
   height DECIMAL(5,2),
   weight DECIMAL(5,2),
   avatar VARCHAR(255),
-  FOREIGN KEY (team_id) REFERENCES teams(id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 教练表
 CREATE TABLE IF NOT EXISTS coaches (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT,
   team_id BIGINT,
   name VARCHAR(100) NOT NULL,
   role_title VARCHAR(50),
@@ -181,7 +184,8 @@ CREATE TABLE IF NOT EXISTS coaches (
   experience_years INT,
   avatar VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (team_id) REFERENCES teams(id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 赛事表

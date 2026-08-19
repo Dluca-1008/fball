@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.football.community.entity.Coach;
+
 import com.football.community.entity.Team;
 import com.football.community.exception.BusinessException;
 import com.football.community.repository.CoachMapper;
 import com.football.community.service.CoachService;
 import com.football.community.service.TeamService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,13 +23,16 @@ public class CoachServiceImpl extends ServiceImpl<CoachMapper, Coach> implements
     @Autowired
     private TeamService teamService;
 
+    @Autowired
+    private CoachMapper coachMapper;
+
     @Override
     public IPage<Coach> getCoachesByTeamId(Long teamId, int page, int size) {
         LambdaQueryWrapper<Coach> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Coach::getTeamId, teamId)
                .orderByAsc(Coach::getName);
         IPage<Coach> coachPage = page(new Page<>(page, size), wrapper);
-        coachPage.getRecords().forEach(this::fillTeamName);
+        coachPage.getRecords().forEach(this::fillNames);
         return coachPage;
     }
 
@@ -40,7 +45,7 @@ public class CoachServiceImpl extends ServiceImpl<CoachMapper, Coach> implements
         }
         wrapper.orderByDesc(Coach::getCreatedAt);
         IPage<Coach> coachPage = page(new Page<>(page, size), wrapper);
-        coachPage.getRecords().forEach(this::fillTeamName);
+        coachPage.getRecords().forEach(this::fillNames);
         return coachPage;
     }
 
@@ -48,7 +53,7 @@ public class CoachServiceImpl extends ServiceImpl<CoachMapper, Coach> implements
     public Coach createCoach(Coach coach) {
         coach.setCreatedAt(LocalDateTime.now());
         save(coach);
-        fillTeamName(coach);
+        fillNames(coach);
         return coach;
     }
 
@@ -68,15 +73,17 @@ public class CoachServiceImpl extends ServiceImpl<CoachMapper, Coach> implements
         removeById(id);
     }
 
-    private void fillTeamName(Coach coach) {
+    @Override
+    public boolean isCoachRegistered(Long userId) {
+        return coachMapper.existsByUserId(userId) > 0;
+    }
+
+    private void fillNames(Coach coach) {
+        // 填充球队名称
         if (coach.getTeamId() != null) {
             Team team = teamService.getById(coach.getTeamId());
             if (team != null) {
-                if (team.getStatus() != null && team.getStatus() == 0) {
-                    coach.setTeamName(team.getName() + "（已解散）");
-                } else {
-                    coach.setTeamName(team.getName());
-                }
+                coach.setTeamName(team.getName());
             }
         }
     }

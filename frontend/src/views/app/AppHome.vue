@@ -117,7 +117,7 @@ const userStore = useUserStore()
 
 const quickActions = ref([
   { label: '赛事列表', path: '/app/matches', icon: '📅', desc: '查看所有赛事' },
-  { label: '我的球队', path: '/app/teams', icon: '🏟️', desc: '管理球队信息' },
+  { label: '我的球队', path: '/app/my-teams', icon: '🏟️', desc: '管理球队信息' },
   { label: '社区动态', path: '/app/posts', icon: '💬', desc: '浏览最新帖子' },
   { label: '消息中心', path: '/app/chat', icon: '📨', desc: '查看聊天记录' },
 ])

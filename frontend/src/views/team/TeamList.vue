@@ -4,15 +4,15 @@
       <div class="header-left">
         <div class="header-icon teams">🏟️</div>
         <div>
-          <h1 class="header-title">球队管理</h1>
-          <p class="header-desc">创建并管理球队信息</p>
+          <h1 class="header-title">所有球队</h1>
+          <p class="header-desc">浏览球队，申请加入心仪的队伍</p>
         </div>
       </div>
       <div class="header-actions">
         <el-input v-model="keyword" placeholder="搜索球队" clearable style="width:200px" @clear="fetchTeams" @keyup.enter="fetchTeams" />
         <el-button @click="fetchTeams">搜索</el-button>
         <el-button type="success" class="btn-create" @click="$router.push('/app/teams/create')">
-          <el-icon><Plus /></el-icon> 创建球队
+          <el-icon></el-icon> 创建球队
         </el-button>
       </div>
     </div>
@@ -28,7 +28,6 @@
               <el-icon><Location /></el-icon> {{ team.city }} · {{ team.country }}
             </p>
           </div>
-          <el-button type="primary" link size="small" class="detail-link">查看详情 →</el-button>
         </div>
         <div class="team-card-footer">
           <span class="stadium"><el-icon><OfficeBuilding /></el-icon> {{ team.stadium || '主场未设置' }}</span>
@@ -66,7 +65,7 @@ async function fetchTeams() {
   loading.value = true
   try {
     const res = await request.get('/api/teams', {
-      params: { page: page.value, size: pageSize.value, keyword: keyword.value }
+      params: { page: page.value, size: pageSize.value, keyword: keyword.value || undefined }
     })
     teams.value = res.data.records
     total.value = res.data.total
@@ -82,31 +81,23 @@ onMounted(fetchTeams)
 .page-shell { max-width: 960px; margin: 0 auto; }
 
 .page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
 }
 .header-left { display: flex; align-items: center; gap: 14px; }
 .header-icon {
   width: 48px; height: 48px;
   background: linear-gradient(135deg, #409eff, #1d4ed8);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 .header-title { font-size: 21px; font-weight: 700; color: #1a202c; margin-bottom: 2px; }
 .header-desc { font-size: 13px; color: #718096; }
-
-.header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .btn-create {
   background: linear-gradient(135deg, #67c23a, #2f891e) !important;
-  border: none !important;
-  border-radius: 10px !important;
+  border: none !important; border-radius: 10px !important;
   font-weight: 600 !important;
   box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
   transition: transform 0.2s, box-shadow 0.2s;
@@ -135,17 +126,15 @@ onMounted(fetchTeams)
 .team-avatar {
   width: 48px; height: 48px;
   background: linear-gradient(135deg, #409eff, #1d4ed8);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700; color: #fff;
-  flex-shrink: 0;
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: #fff; flex-shrink: 0;
 }
 
 .team-main-info { flex: 1; min-width: 0; }
 .team-name { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 4px; }
 .team-location { font-size: 13px; color: #718096; display: flex; align-items: center; gap: 4px; }
 
-.detail-link { flex-shrink: 0; }
+.join-btn { flex-shrink: 0; }
 
 .team-card-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f7fafc; }
 .stadium { font-size: 12px; color: #a0aec0; display: flex; align-items: center; gap: 4px; }

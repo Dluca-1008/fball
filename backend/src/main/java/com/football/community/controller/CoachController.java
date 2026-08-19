@@ -2,6 +2,7 @@ package com.football.community.controller;
 
 import com.football.community.dto.Result;
 import com.football.community.entity.Coach;
+import com.football.community.security.CustomUserDetails;
 import com.football.community.service.CoachService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,7 +12,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 @Tag(name = "教练管理", description = "教练CRUD接口")
 @RestController
@@ -103,5 +106,24 @@ public class CoachController {
     public Result<?> deleteCoach(@PathVariable Long id) {
         coachService.deleteCoach(id);
         return Result.success();
+    }
+
+    @Operation(summary = "获取当前用户的教练信息", description = "获取当前登录用户的教练注册信息")
+    @GetMapping("/my")
+    public Result<Coach> getMyCoach(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        LambdaQueryWrapper<Coach> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Coach::getUserId, userDetails.getId());
+        return Result.success(coachService.getOne(wrapper));
+    }
+
+    @Operation(summary = "用户注册为教练", description = "当前用户注册为教练（自助注册）")
+    @PostMapping("/register")
+    public Result<Coach> registerCoach(@RequestBody Coach coach,
+                                       @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (coachService.isCoachRegistered(userDetails.getId())) {
+            return Result.error(409, "您已注册为教练");
+        }
+        coach.setUserId(userDetails.getId());
+        return Result.success(coachService.createCoach(coach));
     }
 }

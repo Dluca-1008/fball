@@ -108,4 +108,4 @@ npm run dev
 
 ## 默认账号
 
-- 管理员：admin / admin123
+- 管理员：admin01 / 123456
